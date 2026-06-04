@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PatyEnglish">
+<title>PatyEnglish</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width:390px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+
+/* ── DASHBOARD ── */
+#screen-dashboard{}
+.pe-header{background:linear-gradient(160deg,#1a2e42 0%,#0D1B2A 100%);padding:48px 24px 28px;position:relative;border-bottom:1px solid rgba(212,175,55,0.15);}
+.pe-greeting-small{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;margin-bottom:4px;font-weight:500;}
+.pe-greeting-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:#F5F0E8;margin-bottom:2px;}
+.pe-greeting-sub{font-size:13px;color:rgba(245,240,232,0.5);font-weight:300;}
+.pe-avatar-ring{position:absolute;right:24px;top:44px;width:54px;height:54px;border-radius:50%;border:2px solid #D4AF37;background:#1a2e42;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
+.pe-streak-bar{display:flex;align-items:center;gap:8px;margin-top:16px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:8px 14px;width:fit-content;}
+.pe-streak-icon{font-size:16px;}
+.pe-streak-text{font-size:13px;color:#D4AF37;font-weight:500;}
+.pe-streak-muted{font-size:12px;color:rgba(245,240,232,0.4);}
+.pe-brad-card{margin:20px 16px;background:linear-gradient(135deg,#1E3A52 0%,#162B3F 100%);border:1px solid rgba(212,175,55,0.25);border-radius:16px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;}
+.pe-brad-bubble{background:#D4AF37;border-radius:50%;width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.pe-brad-name{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;font-weight:500;margin-bottom:4px;}
+.pe-brad-msg{font-size:14px;color:rgba(245,240,232,0.85);line-height:1.5;}
+.pe-section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.4);font-weight:500;padding:0 20px;margin-bottom:12px;}
+.pe-lesson-card{margin:0 16px 20px;background:#D4AF37;border-radius:16px;padding:20px;cursor:pointer;position:relative;overflow:hidden;}
+.pe-lesson-card::after{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.1);}
+.pe-lesson-tag{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(13,27,42,0.6);font-weight:500;margin-bottom:6px;}
+.pe-lesson-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#0D1B2A;margin-bottom:12px;line-height:1.2;}
+.pe-lesson-meta{display:flex;align-items:center;gap:16px;}
+.pe-lesson-meta-item{font-size:12px;color:rgba(13,27,42,0.65);display:flex;align-items:center;gap:4px;}
+.pe-play-btn{position:absolute;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;background:#0D1B2A;display:flex;align-items:center;justify-content:center;color:#D4AF37;font-size:18px;}
+.pe-progress-section{margin:0 16px 20px;}
+.pe-progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.pe-progress-title{font-size:13px;color:rgba(245,240,232,0.7);}
+.pe-progress-xp{font-size:13px;color:#D4AF37;font-weight:500;}
+.pe-progress-track{height:4px;background:rgba(245,240,232,0.08);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.pe-progress-fill{height:100%;width:24%;background:#D4AF37;border-radius:2px;}
+.pe-progress-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(245,240,232,0.3);}
+.pe-modules-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 16px 20px;}
+.pe-module-card{background:#132336;border:1px solid rgba(245,240,232,0.06);border-radius:14px;padding:16px 14px;cursor:pointer;transition:border-color 0.2s;position:relative;}
+.pe-module-card.active{border-color:rgba(212,175,55,0.3);}
+.pe-module-icon{font-size:22px;margin-bottom:8px;display:block;}
+.pe-module-name{font-size:13px;font-weight:500;color:rgba(245,240,232,0.9);line-height:1.3;margin-bottom:6px;}
+.pe-module-prog{height:2px;background:rgba(245,240,232,0.07);border-radius:1px;overflow:hidden;}
+.pe-module-prog-fill{height:100%;background:#D4AF37;border-radius:1px;}
+.pe-lock{position:absolute;top:12px;right:12px;font-size:14px;opacity:0.3;}
+.pe-badge-row{display:flex;gap:10px;margin:0 16px 24px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.pe-badge{flex-shrink:0;background:#132336;border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:10px 14px;text-align:center;min-width:72px;}
+.pe-badge-icon{font-size:20px;display:block;margin-bottom:4px;}
+.pe-badge-label{font-size:11px;color:rgba(245,240,232,0.5);}
+.pe-divider{height:1px;background:rgba(245,240,232,0.05);margin:4px 16px 16px;}
+.pe-nav{position:sticky;bottom:0;background:#0D1B2A;border-top:1px solid rgba(212,175,55,0.12);display:flex;justify-content:space-around;padding:12px 0 20px;}
+.pe-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;opacity:0.4;}
+.pe-nav-item.active{opacity:1;}
+.pe-nav-icon{font-size:22px;color:#F5F0E8;}
+.pe-nav-label{font-size:10px;letter-spacing:0.5px;color:rgba(245,240,232,0.7);}
+.pe-nav-dot{width:4px;height:4px;border-radius:50%;}
+.pe-nav-item.active .pe-nav-dot{background:#D4AF37;}
+
+/* ── SETUP ── */
+#screen-setup{display:none;padding:48px 24px;text-align:center;}
+.s-icon{font-size:48px;margin-bottom:20px;}
+.s-title{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;}
+.s-sub{font-size:14px;color:rgba(245,240,232,0.5);margin-bottom:32px;line-height:1.6;}
+.s-input{width:100%;background:#132336;border:1px solid rgba(212,175,55,0.35);border-radius:12px;padding:14px 16px;color:#F5F0E8;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px;}
+.s-input:focus{border-color:#D4AF37;}
+.s-input::placeholder{color:rgba(245,240,232,0.25);}
+.s-btn{width:100%;padding:15px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.s-err{font-size:13px;color:#ff6b6b;margin-top:10px;display:none;}
+.s-note{font-size:12px;color:rgba(245,240,232,0.25);margin-top:16px;line-height:1.5;}
+
+/* ── LESSON ── */
+#screen-lesson{display:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:44px 20px 16px;}
+.back-btn{width:36px;height:36px;border-radius:50%;background:rgba(245,240,232,0.08);border:none;color:#F5F0E8;font-size:18px;cursor:pointer;}
+.lmeta{text-align:center;}
+.ltag{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;font-weight:500;}
+.ltitle{font-size:15px;font-weight:500;color:#F5F0E8;margin-top:2px;}
+.xpchip{background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:6px 12px;font-size:12px;color:#D4AF37;font-weight:500;}
+.steps{display:flex;gap:4px;padding:0 20px 16px;}
+.dot{height:3px;border-radius:2px;flex:1;background:rgba(245,240,232,0.12);transition:background 0.3s;}
+.dot.done{background:#D4AF37;}
+.dot.active{background:rgba(212,175,55,0.5);}
+.vbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.18);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(212,175,55,0.8);margin:0 20px 16px;}
+.brad{display:flex;gap:14px;align-items:flex-start;margin:0 16px 18px;background:#1a2e42;border-radius:14px;padding:16px;border:1px solid rgba(212,175,55,0.15);}
+.bav{width:40px;height:40px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.bname{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#D4AF37;margin-bottom:4px;font-weight:500;}
+.bmsg{font-size:14px;color:rgba(245,240,232,0.8);line-height:1.5;}
+.slabel{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.3);padding:0 20px;margin-bottom:12px;}
+.card{background:#132336;border:1px solid rgba(212,175,55,0.2);border-radius:18px;padding:22px 20px;margin:0 16px 12px;}
+.pen{font-family:'Playfair Display',serif;font-size:22px;color:#F5F0E8;line-height:1.3;margin-bottom:8px;}
+.ppt{font-size:14px;color:rgba(245,240,232,0.5);font-weight:300;margin-bottom:14px;}
+.pph{font-size:13px;color:#D4AF37;background:rgba(212,175,55,0.08);border-radius:8px;padding:8px 12px;font-family:monospace;margin-bottom:14px;}
+.abtn{display:flex;align-items:center;gap:10px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:30px;padding:10px 16px;cursor:pointer;width:100%;}
+.abtn:disabled{opacity:0.5;cursor:not-allowed;}
+.aico{width:32px;height:32px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.aico.loading{animation:pulse 0.8s infinite;background:rgba(212,175,55,0.4);}
+.albl{font-size:13px;color:#D4AF37;font-weight:500;}
+.asub{font-size:11px;color:rgba(245,240,232,0.4);}
+.tip{background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.1);border-radius:12px;padding:14px 16px;margin:0 16px 20px;display:flex;gap:12px;}
+.tipico{font-size:18px;flex-shrink:0;}
+.tiptxt{font-size:13px;color:rgba(245,240,232,0.65);line-height:1.5;}
+.tiptxt b{color:#D4AF37;font-weight:500;}
+.navrow{display:flex;gap:12px;padding:12px 16px 36px;}
+.bprev{flex:1;padding:14px;border-radius:12px;border:1px solid rgba(245,240,232,0.15);background:transparent;color:rgba(245,240,232,0.6);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.bnext{flex:2;padding:14px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+/* ── RESULT ── */
+#screen-result{display:none;padding:40px 24px;text-align:center;}
+.rico{font-size:56px;margin-bottom:20px;}
+.rtitle{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:8px;}
+.rsub{font-size:15px;color:rgba(245,240,232,0.55);margin-bottom:28px;line-height:1.6;}
+.xpbox{background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:16px;padding:20px;margin-bottom:24px;}
+.xpnum{font-family:'Playfair Display',serif;font-size:40px;color:#D4AF37;}
+.xplbl{font-size:13px;color:rgba(245,240,232,0.5);margin-top:4px;}
+.rbtns{display:flex;flex-direction:column;gap:12px;}
+.rbtn1{padding:16px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.rbtn2{padding:14px;border-radius:12px;border:1px solid rgba(245,240,232,0.2);background:transparent;color:rgba(245,240,232,0.7);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     DASHBOARD
+════════════════════════════════ -->
+<div id="screen-dashboard">
+  <div class="pe-header">
+    <div class="pe-greeting-small">Bem-vinda de volta</div>
+    <div class="pe-greeting-name">Olá, Paty ✨</div>
+    <div class="pe-greeting-sub">Seu inglês para viagem começa aqui</div>
+    <div class="pe-avatar-ring">🎩</div>
+    <div class="pe-streak-bar">
+      <span class="pe-streak-icon">🔥</span>
+      <span class="pe-streak-text">1 dia seguido</span>
+      <span class="pe-streak-muted">· continue hoje!</span>
+    </div>
+  </div>
+
+  <div class="pe-brad-card" onclick="iniciarAula()">
+    <div class="pe-brad-bubble">🎬</div>
+    <div>
+      <div class="pe-brad-name">Brad Pitt · seu professor</div>
+      <div class="pe-brad-msg">"Paty, hoje você vai aprender a fazer check-in no hotel em inglês. Vamos lá? É mais fácil do que parece! 😄"</div>
+    </div>
+  </div>
+
+  <div class="pe-section-label">Lição do dia</div>
+  <div class="pe-lesson-card" onclick="iniciarAula()">
+    <div class="pe-lesson-tag">Módulo 3 · Hotel e Hospedagem</div>
+    <div class="pe-lesson-title">Check-in no Hotel</div>
+    <div class="pe-lesson-meta">
+      <div class="pe-lesson-meta-item">⏱ 8 min</div>
+      <div class="pe-lesson-meta-item">🎧 Áudio incluso</div>
+      <div class="pe-lesson-meta-item">⭐ 50 XP</div>
+    </div>
+    <div class="pe-play-btn">▶</div>
+  </div>
+
+  <div class="pe-section-label">Seu progresso</div>
+  <div class="pe-progress-section">
+    <div class="pe-progress-header">
+      <span class="pe-progress-title">Nível: Iniciante</span>
+      <span class="pe-progress-xp">120 XP</span>
+    </div>
+    <div class="pe-progress-track"><div class="pe-progress-fill"></div></div>
+    <div class="pe-progress-labels"><span>Iniciante</span><span>Viajante Básico → 500 XP</span></div>
+  </div>
+
+  <div class="pe-divider"></div>
+  <div class="pe-section-label">Módulos de viagem</div>
+  <div class="pe-modules-grid">
+    <div class="pe-module-card active" onclick="iniciarAula()">
+      <span class="pe-module-icon">✈️</span>
+      <div class="pe-module-name">Aeroporto e Voos</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:60%"></div></div>
+    </div>
+    <div class="pe-module-card active" onclick="iniciarAula()">
+      <span class="pe-module-icon">🛂</span>
+      <div class="pe-module-name">Aduana · EUA</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:30%"></div></div>
+    </div>
+    <div class="pe-module-card active" onclick="iniciarAula()">
+      <span class="pe-module-icon">🏨</span>
+      <div class="pe-module-name">Hotel e Hospedagem</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:10%"></div></div>
+    </div>
+    <div class="pe-module-card">
+      <span class="pe-module-icon">🍽️</span>
+      <div class="pe-module-name">Restaurante</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:0%"></div></div>
+      <span class="pe-lock">🔒</span>
+    </div>
+    <div class="pe-module-card">
+      <span class="pe-module-icon">🚕</span>
+      <div class="pe-module-name">Táxi e Transporte</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:0%"></div></div>
+      <span class="pe-lock">🔒</span>
+    </div>
+    <div class="pe-module-card">
+      <span class="pe-module-icon">🛍️</span>
+      <div class="pe-module-name">Compras</div>
+      <div class="pe-module-prog"><div class="pe-module-prog-fill" style="width:0%"></div></div>
+      <span class="pe-lock">🔒</span>
+    </div>
+  </div>
+
+  <div class="pe-section-label">Suas conquistas</div>
+  <div class="pe-badge-row">
+    <div class="pe-badge"><span class="pe-badge-icon">🥇</span><div class="pe-badge-label">Primeira lição</div></div>
+    <div class="pe-badge"><span class="pe-badge-icon">🎙️</span><div class="pe-badge-label">Primeira fala</div></div>
+    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">🔥</span><div class="pe-badge-label">7 dias</div></div>
+    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">✈️</span><div class="pe-badge-label">Aeroporto</div></div>
+    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">🏆</span><div class="pe-badge-label">Viajante</div></div>
+  </div>
+
+  <div class="pe-nav">
+    <div class="pe-nav-item active">
+      <span class="pe-nav-icon">🏠</span>
+      <span class="pe-nav-label">Início</span>
+      <div class="pe-nav-dot"></div>
+    </div>
+    <div class="pe-nav-item">
+      <span class="pe-nav-icon">📚</span>
+      <span class="pe-nav-label">Temas</span>
+      <div class="pe-nav-dot"></div>
+    </div>
+    <div class="pe-nav-item">
+      <span class="pe-nav-icon">🎭</span>
+      <span class="pe-nav-label">Praticar</span>
+      <div class="pe-nav-dot"></div>
+    </div>
+    <div class="pe-nav-item">
+      <span class="pe-nav-icon">⭐</span>
+      <span class="pe-nav-label">Progresso</span>
+      <div class="pe-nav-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SETUP API KEY
+════════════════════════════════ -->
+<div id="screen-setup">
+  <div class="s-icon">🔑</div>
+  <div class="s-title">Ativar Voz Nativa</div>
+  <div class="s-sub">Cole sua API Key do ElevenLabs para ativar a voz do Brad Pitt em inglês americano de verdade.</div>
+  <input class="s-input" id="apiInput" type="password" placeholder="Cole sua API Key aqui (sk_...)" autocomplete="off"/>
+  <button class="s-btn" onclick="ativarVoz()">Ativar voz do Brad Pitt ✓</button>
+  <div class="s-err" id="sErr">API Key inválida. Verifique e tente novamente.</div>
+  <div class="s-note">🔒 Sua chave vai direto ao ElevenLabs — fica salva apenas neste dispositivo.</div>
+</div>
+
+<!-- ═══════════════════════════════
+     AULA
+════════════════════════════════ -->
+<div id="screen-lesson">
+  <div class="topbar">
+    <button class="back-btn" onclick="voltarDashboard()">←</button>
+    <div class="lmeta">
+      <div class="ltag">Módulo 3 · Hotel</div>
+      <div class="ltitle">Check-in no hotel</div>
+    </div>
+    <div class="xpchip">+50 XP</div>
+  </div>
+  <div class="steps" id="stepsBar"></div>
+  <div class="vbadge">🎙️ Adam · ElevenLabs · Inglês americano</div>
+  <div class="brad">
+    <div class="bav">🎬</div>
+    <div>
+      <div class="bname">Brad Pitt · seu professor</div>
+      <div class="bmsg" id="bradMsg"></div>
+    </div>
+  </div>
+  <div class="slabel" id="sLabel">Frase 1 de 5</div>
+  <div class="card">
+    <div class="pen" id="phraseEn"></div>
+    <div class="ppt" id="phrasePt"></div>
+    <div class="pph" id="phrasePhon"></div>
+    <button class="abtn" id="audioBtn" onclick="tocarAudio()">
+      <div class="aico" id="audioIco">▶</div>
+      <div>
+        <div class="albl" id="audioLbl">Ouvir voz nativa</div>
+        <div class="asub">Adam · ElevenLabs</div>
+      </div>
+    </button>
+  </div>
+  <div class="tip">
+    <div class="tipico">💡</div>
+    <div class="tiptxt" id="tipTxt"></div>
+  </div>
+  <div class="navrow">
+    <button class="bprev" id="btnPrev" onclick="anterior()">← Anterior</button>
+    <button class="bnext" id="btnNext" onclick="proximo()">Próxima →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     RESULTADO
+════════════════════════════════ -->
+<div id="screen-result">
+  <div class="rico">🏆</div>
+  <div class="rtitle">Aula concluída!</div>
+  <div class="rsub">Você aprendeu 5 frases essenciais para o check-in. O Brad está muito orgulhoso de você!</div>
+  <div class="xpbox">
+    <div class="xpnum">+50 XP</div>
+    <div class="xplbl">pontos conquistados nesta lição</div>
+  </div>
+  <div class="rbtns">
+    <button class="rbtn1">Praticar pronúncia 🎙️</button>
+    <button class="rbtn2">Simular check-in real (role-play)</button>
+    <button class="rbtn2" onclick="voltarDashboard()">Voltar ao início</button>
+  </div>
+</div>
+
+<script>
+const VOICE_ID = 'wBXNqKUATyqu0RtYt25i';
+let apiKey = localStorage.getItem('pe_apikey') || '';
+let atual = 0;
+let audioAtual = null;
+
+const frases = [
+  { en:"I have a reservation.", pt:"Eu tenho uma reserva.", ph:"🔤  Ai ráv e rézervêishan", tip:"<b>Dica do Brad:</b> Sempre diga seu sobrenome logo depois — ex: \"I have a reservation, Silva.\" Fica muito natural!", brad:"Esta é a primeira frase que você diz na recepção. Curta e direta — o recepcionista vai entender na hora! 😊" },
+  { en:"My name is Paty Silva.", pt:"Meu nome é Paty Silva.", ph:"🔤  Mai néim iz Paty Silva", tip:"<b>Dica do Brad:</b> Fale devagar e claramente. Se não entenderem, soletre: P-A-T-Y.", brad:"Confirme seu nome logo depois da reserva. Simples assim — e você já está no controle da situação!" },
+  { en:"I'd like a non-smoking room, please.", pt:"Eu gostaria de um quarto para não fumantes.", ph:"🔤  Aid láik e non-smóukin ruum, plíz", tip:"<b>Dica do Brad:</b> \"I'd like\" é muito mais elegante que \"I want\". Use sempre em hotéis e restaurantes!", brad:"Quer um quarto melhor? Peça! Os hotéis adoram atender pedidos razoáveis. E o \"please\" faz toda a diferença." },
+  { en:"What time is check-out?", pt:"A que horas é o check-out?", ph:"🔤  Uót taim iz chék-áut?", tip:"<b>Dica do Brad:</b> Normalmente às 11h ou 12h. Se precisar ficar mais, pergunte: \"Can I have a late check-out?\"", brad:"Esta pergunta salva você de surpresas! Pergunte logo no check-in — é completamente normal fazer isso." },
+  { en:"Can I have the WiFi password, please?", pt:"Posso ter a senha do WiFi, por favor?", ph:"🔤  Ken Ai ráv de uái-fái pássuord, plíz?", tip:"<b>Dica do Brad:</b> Muitos hotéis mostram a senha automaticamente, mas saber pedir garante que você não fica sem internet!", brad:"A frase mais usada no mundo moderno! 😄 Você chegou até o fim — estou muito orgulhoso de você, Paty!" }
+];
+
+function show(id) {
+  ['screen-dashboard','screen-setup','screen-lesson','screen-result'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function iniciarAula() {
+  if (!apiKey) { show('screen-setup'); return; }
+  atual = 0;
+  show('screen-lesson');
+  mostrarFrase(0);
+}
+
+function voltarDashboard() {
+  resetAudio();
+  show('screen-dashboard');
+}
+
+function ativarVoz() {
+  const v = document.getElementById('apiInput').value.trim();
+  if (!v.startsWith('sk_') || v.length < 20) {
+    document.getElementById('sErr').style.display = 'block';
+    return;
+  }
+  apiKey = v;
+  localStorage.setItem('pe_apikey', v);
+  atual = 0;
+  show('screen-lesson');
+  mostrarFrase(0);
+}
+
+function buildSteps() {
+  const bar = document.getElementById('stepsBar');
+  bar.innerHTML = '';
+  frases.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < atual ? ' done' : i === atual ? ' active' : '');
+    bar.appendChild(d);
+  });
+}
+
+function mostrarFrase(i) {
+  const f = frases[i];
+  document.getElementById('phraseEn').textContent = f.en;
+  document.getElementById('phrasePt').textContent = f.pt;
+  document.getElementById('phrasePhon').textContent = f.ph;
+  document.getElementById('tipTxt').innerHTML = f.tip;
+  document.getElementById('bradMsg').textContent = f.brad;
+  document.getElementById('sLabel').textContent = 'Frase ' + (i+1) + ' de ' + frases.length;
+  document.getElementById('btnPrev').style.display = i === 0 ? 'none' : '';
+  document.getElementById('btnNext').textContent = i === frases.length-1 ? 'Concluir aula ✓' : 'Próxima →';
+  resetAudio();
+  buildSteps();
+}
+
+function resetAudio() {
+  if (audioAtual) { audioAtual.pause(); audioAtual = null; }
+  const ico = document.getElementById('audioIco');
+  if (!ico) return;
+  ico.textContent = '▶';
+  ico.className = 'aico';
+  ico.style.background = '#D4AF37';
+  document.getElementById('audioLbl').textContent = 'Ouvir voz nativa';
+  document.getElementById('audioBtn').disabled = false;
+}
+
+async function tocarAudio() {
+  if (audioAtual && !audioAtual.paused) { resetAudio(); return; }
+  const btn = document.getElementById('audioBtn');
+  const ico = document.getElementById('audioIco');
+  const lbl = document.getElementById('audioLbl');
+  btn.disabled = true;
+  ico.className = 'aico loading';
+  ico.textContent = '⏳';
+  lbl.textContent = 'Carregando...';
+  try {
+    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + VOICE_ID, {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: frases[atual].en,
+        model_id: 'eleven_monolingual_v1',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+      })
+    });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    audioAtual = new Audio(url);
+    ico.className = 'aico';
+    ico.textContent = '⏸';
+    ico.style.background = '#b8962e';
+    lbl.textContent = 'Reproduzindo...';
+    btn.disabled = false;
+    audioAtual.play();
+    audioAtual.onended = () => {
+      ico.textContent = '▶';
+      ico.style.background = '#D4AF37';
+      lbl.textContent = 'Ouvir novamente';
+      audioAtual = null;
+    };
+  } catch(e) {
+    ico.className = 'aico';
+    ico.textContent = '⚠️';
+    ico.style.background = '#8B0000';
+    lbl.textContent = 'Erro — verifique sua API Key';
+    btn.disabled = false;
+  }
+}
+
+function proximo() {
+  resetAudio();
+  if (atual < frases.length-1) { atual++; mostrarFrase(atual); }
+  else { show('screen-result'); }
+}
+
+function anterior() {
+  resetAudio();
+  if (atual > 0) { atual--; mostrarFrase(atual); }
+}
+
+// Iniciar no dashboard
+show('screen-dashboard');
+</script>
+</body>
+</html>
