@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -270,7 +271,7 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
     <div class="xpchip">+50 XP</div>
   </div>
   <div class="steps" id="stepsBar"></div>
-  <div class="vbadge">🎙️ Adam · ElevenLabs · Inglês americano</div>
+  <div class="vbadge">🎙️ Voz nativa · Inglês americano</div>
   <div class="brad">
     <div class="bav">🎬</div>
     <div>
@@ -320,10 +321,30 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
 </div>
 
 <script>
-const VOICE_ID = 'wBXNqKUATyqu0RtYt25i';
-let apiKey = localStorage.getItem('pe_apikey') || 'sk_21c70191c70d06ddde7ab1d1613deffd75fff4627df64d88';
 let atual = 0;
 let audioAtual = null;
+let synth = window.speechSynthesis;
+let vozSelecionada = null;
+
+// Seleciona a melhor voz americana disponível
+function carregarVoz() {
+  const vozes = synth.getVoices();
+  const preferidas = [
+    'Google US English',
+    'Microsoft Guy Online (Natural) - English (United States)',
+    'Microsoft David Desktop - English (United States)',
+    'Alex',
+    'Samantha'
+  ];
+  for (const nome of preferidas) {
+    const v = vozes.find(v => v.name === nome);
+    if (v) { vozSelecionada = v; return; }
+  }
+  // Fallback: qualquer voz en-US
+  vozSelecionada = vozes.find(v => v.lang === 'en-US') || vozes.find(v => v.lang.startsWith('en')) || null;
+}
+speechSynthesis.onvoiceschanged = carregarVoz;
+carregarVoz();
 
 const frases = [
   { en:"I have a reservation.", pt:"Eu tenho uma reserva.", ph:"🔤  Ai ráv e rézervêishan", tip:"<b>Dica do Brad:</b> Sempre diga seu sobrenome logo depois — ex: \"I have a reservation, Silva.\" Fica muito natural!", brad:"Esta é a primeira frase que você diz na recepção. Curta e direta — o recepcionista vai entender na hora! 😊" },
@@ -340,7 +361,6 @@ function show(id) {
 }
 
 function iniciarAula() {
-  if (!apiKey) { show('screen-setup'); return; }
   atual = 0;
   show('screen-lesson');
   mostrarFrase(0);
@@ -389,7 +409,7 @@ function mostrarFrase(i) {
 }
 
 function resetAudio() {
-  if (audioAtual) { audioAtual.pause(); audioAtual = null; }
+  if (synth.speaking) synth.cancel();
   const ico = document.getElementById('audioIco');
   if (!ico) return;
   ico.textContent = '▶';
@@ -399,48 +419,43 @@ function resetAudio() {
   document.getElementById('audioBtn').disabled = false;
 }
 
-async function tocarAudio() {
-  if (audioAtual && !audioAtual.paused) { resetAudio(); return; }
-  const btn = document.getElementById('audioBtn');
+function tocarAudio() {
   const ico = document.getElementById('audioIco');
   const lbl = document.getElementById('audioLbl');
-  btn.disabled = true;
-  ico.className = 'aico loading';
-  ico.textContent = '⏳';
-  lbl.textContent = 'Carregando...';
-  try {
-    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + VOICE_ID, {
-      method: 'POST',
-      headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: frases[atual].en,
-        model_id: 'eleven_monolingual_v1',
-        voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
-      })
-    });
-    if (!res.ok) throw new Error('Erro ' + res.status);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    audioAtual = new Audio(url);
-    ico.className = 'aico';
-    ico.textContent = '⏸';
-    ico.style.background = '#b8962e';
-    lbl.textContent = 'Reproduzindo...';
-    btn.disabled = false;
-    audioAtual.play();
-    audioAtual.onended = () => {
-      ico.textContent = '▶';
-      ico.style.background = '#D4AF37';
-      lbl.textContent = 'Ouvir novamente';
-      audioAtual = null;
-    };
-  } catch(e) {
-    ico.className = 'aico';
+
+  // Se já está falando, para
+  if (synth.speaking) {
+    synth.cancel();
+    ico.textContent = '▶';
+    ico.style.background = '#D4AF37';
+    lbl.textContent = 'Ouvir voz nativa';
+    return;
+  }
+
+  carregarVoz();
+  const utt = new SpeechSynthesisUtterance(frases[atual].en);
+  utt.lang = 'en-US';
+  utt.rate = 0.82;
+  utt.pitch = 0.95;
+  utt.volume = 1;
+  if (vozSelecionada) utt.voice = vozSelecionada;
+
+  ico.textContent = '⏸';
+  ico.style.background = '#b8962e';
+  lbl.textContent = 'Reproduzindo...';
+
+  utt.onend = () => {
+    ico.textContent = '▶';
+    ico.style.background = '#D4AF37';
+    lbl.textContent = 'Ouvir novamente';
+  };
+  utt.onerror = () => {
     ico.textContent = '⚠️';
     ico.style.background = '#8B0000';
-    lbl.textContent = 'Erro — verifique sua API Key';
-    btn.disabled = false;
-  }
+    lbl.textContent = 'Erro de áudio';
+  };
+
+  synth.speak(utt);
 }
 
 function proximo() {
