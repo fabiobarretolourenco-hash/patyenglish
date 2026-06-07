@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -102,6 +103,28 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
 .rbtns{display:flex;flex-direction:column;gap:12px;}
 .rbtn1{padding:16px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
 .rbtn2{padding:14px;border-radius:12px;border:1px solid rgba(245,240,232,0.2);background:transparent;color:rgba(245,240,232,0.7);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+/* PRONÚNCIA */
+.mic-btn{display:flex;align-items:center;gap:10px;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.3);border-radius:30px;padding:10px 16px;cursor:pointer;width:100%;margin-top:10px;transition:all 0.2s;}
+.mic-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.mic-btn.listening{background:rgba(255,80,80,0.12);border-color:rgba(255,80,80,0.5);animation:pulse 1.2s ease-in-out infinite;}
+.mic-ico{width:32px;height:32px;border-radius:50%;background:rgba(100,180,255,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:background 0.2s;}
+.mic-btn.listening .mic-ico{background:rgba(255,80,80,0.5);}
+.mic-lbl{font-size:13px;color:rgba(100,180,255,0.9);font-weight:500;}
+.mic-btn.listening .mic-lbl{color:rgba(255,100,100,0.9);}
+.mic-sub{font-size:11px;color:rgba(245,240,232,0.4);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,0.3);}50%{box-shadow:0 0 0 8px rgba(255,80,80,0);}}
+.pronunc-result{margin:0 16px 10px;border-radius:12px;padding:14px 16px;display:none;animation:fadeIn 0.3s ease;}
+.pronunc-result.success{background:rgba(50,200,100,0.1);border:1px solid rgba(50,200,100,0.3);}
+.pronunc-result.partial{background:rgba(255,200,50,0.1);border:1px solid rgba(255,200,50,0.3);}
+.pronunc-result.fail{background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);}
+.pr-icon{font-size:22px;margin-bottom:6px;}
+.pr-title{font-size:14px;font-weight:500;margin-bottom:4px;}
+.pronunc-result.success .pr-title{color:#50c878;}
+.pronunc-result.partial .pr-title{color:#ffc832;}
+.pronunc-result.fail .pr-title{color:#ff5050;}
+.pr-heard{font-size:12px;color:rgba(245,240,232,0.5);margin-bottom:2px;}
+.pr-heard span{color:rgba(245,240,232,0.8);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
@@ -249,6 +272,18 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
         <div class="asub">Inglês americano</div>
       </div>
     </button>
+    <button class="mic-btn" id="micBtn" onclick="testarPronuncia()">
+      <div class="mic-ico" id="micIco">🎤</div>
+      <div>
+        <div class="mic-lbl" id="micLbl">Testar minha pronúncia</div>
+        <div class="mic-sub">Toque e repita a frase em voz alta</div>
+      </div>
+    </button>
+  </div>
+  <div class="pronunc-result" id="pronunciResult">
+    <div class="pr-icon" id="prIcon"></div>
+    <div class="pr-title" id="prTitle"></div>
+    <div class="pr-heard">Entendi: <span id="prHeard"></span></div>
   </div>
   <div class="tip">
     <div class="tipico">💡</div>
@@ -427,6 +462,18 @@ function resetAudio() {
   ico.style.background = '#D4AF37';
   document.getElementById('audioLbl').textContent = 'Ouvir voz nativa';
   document.getElementById('audioBtn').disabled = false;
+  // Reset mic state too
+  micAtivo = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  const micBtn = document.getElementById('micBtn');
+  if (micBtn) {
+    micBtn.classList.remove('listening');
+    micBtn.disabled = false;
+    document.getElementById('micIco').textContent = '🎤';
+    document.getElementById('micLbl').textContent = 'Testar minha pronúncia';
+  }
+  const resultEl = document.getElementById('pronunciResult');
+  if (resultEl) resultEl.style.display = 'none';
 }
 
 function tocarAudio() {
@@ -471,6 +518,126 @@ function anterior() {
 }
 
 show('screen-dashboard');
+
+// ─── PRONÚNCIA ───────────────────────────────────────────────
+let recognition = null;
+let micAtivo = false;
+
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'en-US';
+  r.continuous = false;
+  r.interimResults = false;
+  r.maxAlternatives = 3;
+  return r;
+}
+
+function similaridade(a, b) {
+  // Normaliza: minúsculas, remove pontuação
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  const na = norm(a), nb = norm(b);
+  if (na === nb) return 1.0;
+  // Calcula palavras em comum
+  const wa = na.split(/\s+/), wb = nb.split(/\s+/);
+  const comuns = wa.filter(w => wb.includes(w)).length;
+  return comuns / Math.max(wa.length, wb.length);
+}
+
+function mostrarResultadoPronuncia(heard, target) {
+  const score = similaridade(heard, target);
+  const el = document.getElementById('pronunciResult');
+  const icon = document.getElementById('prIcon');
+  const title = document.getElementById('prTitle');
+  const heardEl = document.getElementById('prHeard');
+  
+  el.className = 'pronunc-result';
+  heardEl.textContent = heard || '(não entendi)';
+  
+  if (score >= 0.85) {
+    el.classList.add('success');
+    icon.textContent = '✅';
+    title.textContent = 'Excelente! Pronúncia perfeita!';
+  } else if (score >= 0.5) {
+    el.classList.add('partial');
+    icon.textContent = '⚠️';
+    title.textContent = 'Quase lá! Continue praticando.';
+  } else {
+    el.classList.add('fail');
+    icon.textContent = '🔄';
+    title.textContent = 'Tente novamente — ouça e repita!';
+  }
+  el.style.display = 'block';
+}
+
+function resetMic() {
+  micAtivo = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} }
+  const btn = document.getElementById('micBtn');
+  const ico = document.getElementById('micIco');
+  const lbl = document.getElementById('micLbl');
+  if (!btn) return;
+  btn.classList.remove('listening');
+  ico.textContent = '🎤';
+  lbl.textContent = 'Testar minha pronúncia';
+  btn.disabled = false;
+}
+
+function testarPronuncia() {
+  // Para o áudio se estiver tocando
+  if (synth.speaking) synth.cancel();
+  
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Seu navegador não suporta reconhecimento de voz. Use o Safari no iPhone.');
+    return;
+  }
+  
+  if (micAtivo) { resetMic(); return; }
+  
+  const btn = document.getElementById('micBtn');
+  const ico = document.getElementById('micIco');
+  const lbl = document.getElementById('micLbl');
+  const resultEl = document.getElementById('pronunciResult');
+  
+  // Esconde resultado anterior
+  resultEl.style.display = 'none';
+  
+  recognition = initRecognition();
+  
+  recognition.onstart = () => {
+    micAtivo = true;
+    btn.classList.add('listening');
+    ico.textContent = '⏹';
+    lbl.textContent = 'Ouvindo... fale agora!';
+    btn.disabled = false;
+  };
+  
+  recognition.onresult = (e) => {
+    const heard = e.results[0][0].transcript;
+    const target = modulos[moduloAtual].frases[atual].en;
+    mostrarResultadoPronuncia(heard, target);
+  };
+  
+  recognition.onerror = (e) => {
+    resetMic();
+    if (e.error === 'no-speech') {
+      resultEl.className = 'pronunc-result fail';
+      resultEl.style.display = 'block';
+      document.getElementById('prIcon').textContent = '🔇';
+      document.getElementById('prTitle').textContent = 'Não ouvi nada — tente novamente.';
+      document.getElementById('prHeard').textContent = '';
+    } else if (e.error === 'not-allowed') {
+      alert('Permissão de microfone negada. Vá em Ajustes > Safari e permita o microfone.');
+    }
+  };
+  
+  recognition.onend = () => { resetMic(); };
+  
+  try { recognition.start(); }
+  catch(e) { resetMic(); }
+}
 </script>
 </body>
 </html>
