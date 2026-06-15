@@ -931,6 +931,155 @@
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ─────────────────────────────────────────────────────────
+       ROLE-PLAY — TELA MENU
+    ───────────────────────────────────────────────────────── */
+    #screen-roleplay-menu {
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    #screen-roleplay-menu .pe-section-intro {
+      padding: 0 16px 20px;
+      font-size: 13px;
+      color: rgba(245,240,232,0.5);
+      line-height: 1.55;
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       ROLE-PLAY — TELA CHAT
+    ───────────────────────────────────────────────────────── */
+    #screen-roleplay {
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .rp-chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 180px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .rp-bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.5;
+      animation: fadeIn 0.35s ease;
+    }
+    .rp-bubble.bot {
+      background: #1E3A52;
+      border: 1px solid rgba(212,175,55,0.2);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .rp-bubble.user {
+      background: #D4AF37;
+      color: #0D1B2A;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+      font-weight: 500;
+    }
+    .rp-bubble.dica {
+      background: rgba(212,175,55,0.08);
+      border: 1px solid rgba(212,175,55,0.3);
+      color: #D4AF37;
+      font-size: 13px;
+      align-self: center;
+      text-align: center;
+      border-radius: 12px;
+      max-width: 92%;
+    }
+    .rp-bubble-header {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #D4AF37;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .rp-bubble-sub {
+      font-size: 12px;
+      color: rgba(245,240,232,0.4);
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    .rp-input-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: linear-gradient(to top, #0D1B2A 80%, transparent);
+      padding: 12px 16px 24px;
+    }
+    .rp-hint {
+      font-size: 12px;
+      color: rgba(245,240,232,0.5);
+      text-align: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: rgba(212,175,55,0.07);
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+    .rp-mic-btn {
+      width: 100%;
+      padding: 16px;
+      background: #D4AF37;
+      border: none;
+      border-radius: 14px;
+      color: #0D1B2A;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: opacity 0.2s, background 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .rp-mic-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+    .rp-mic-btn.listening {
+      background: #e74c3c;
+      color: #fff;
+      animation: pulse 1.2s infinite;
+    }
+    .rp-fim {
+      text-align: center;
+      padding: 28px 16px;
+      animation: fadeIn 0.5s ease;
+    }
+    .rp-fim-emoji  { font-size: 52px; margin-bottom: 12px; }
+    .rp-fim-titulo { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 8px; }
+    .rp-fim-msg    { font-size: 14px; color: rgba(245,240,232,0.6); margin-bottom: 20px; line-height: 1.5; }
+    .rp-fim-card   {
+      background: #1E3A52;
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .rp-fim-score  { font-size: 36px; color: #D4AF37; font-weight: 700; }
+    .rp-fim-label  { font-size: 12px; color: rgba(245,240,232,0.45); margin-top: 2px; }
+    .rp-fim-btn    {
+      width: 100%; padding: 14px; border: none; border-radius: 14px;
+      font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+    }
+    .rp-fim-btn.primary   { background: #D4AF37; color: #0D1B2A; }
+    .rp-fim-btn.secondary { background: transparent; border: 1px solid rgba(245,240,232,0.2); color: #F5F0E8; }
   </style>
 </head>
 <body>
@@ -1168,6 +1317,80 @@
     <button class="rbtn2" onclick="repetirAula()">Repetir esta aula</button>
   </div>
 </div><!-- fim #screen-result -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA 4 — MENU DE ROLE-PLAY
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-roleplay-menu" style="display:none; padding-bottom:80px;">
+
+  <div class="topbar">
+    <button class="back-btn" onclick="voltarDashboard()">←</button>
+    <div class="lmeta">
+      <div class="ltag">PRATICAR</div>
+      <div class="ltitle">Role-play</div>
+    </div>
+    <div class="xpchip">+30 XP</div>
+  </div>
+
+  <div style="padding: 20px 16px 4px;">
+    <div class="pe-section-label" style="padding:0; margin-bottom:10px;">ESCOLHA UMA SITUAÇÃO</div>
+    <p class="pe-section-intro">Simule uma conversa real em inglês. O Brad faz o papel do nativo — você pratica respondendo com sua voz!</p>
+  </div>
+
+  <div class="pe-modules-grid">
+    <div class="pe-module-card" onclick="iniciarRolePlay('hotel')">
+      <span class="pe-module-icon">🏨</span>
+      <div class="pe-module-name">Hotel</div>
+    </div>
+    <div class="pe-module-card" onclick="iniciarRolePlay('aeroporto')">
+      <span class="pe-module-icon">✈️</span>
+      <div class="pe-module-name">Aeroporto</div>
+    </div>
+    <div class="pe-module-card" onclick="iniciarRolePlay('aduana')">
+      <span class="pe-module-icon">🛂</span>
+      <div class="pe-module-name">Aduana</div>
+    </div>
+    <div class="pe-module-card" onclick="iniciarRolePlay('restaurante')">
+      <span class="pe-module-icon">🍽️</span>
+      <div class="pe-module-name">Restaurante</div>
+    </div>
+    <div class="pe-module-card" onclick="iniciarRolePlay('taxi')">
+      <span class="pe-module-icon">🚕</span>
+      <div class="pe-module-name">Táxi</div>
+    </div>
+    <div class="pe-module-card" onclick="iniciarRolePlay('compras')">
+      <span class="pe-module-icon">🛍️</span>
+      <div class="pe-module-name">Compras</div>
+    </div>
+  </div>
+
+</div><!-- fim #screen-roleplay-menu -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA 5 — ROLE-PLAY (conversa)
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-roleplay" style="display:none;">
+
+  <div class="topbar">
+    <button class="back-btn" onclick="sairRolePlay()">←</button>
+    <div class="lmeta">
+      <div class="ltag" id="rpTag">ROLE-PLAY</div>
+      <div class="ltitle" id="rpTitle">Hotel</div>
+    </div>
+    <div class="xpchip" id="rpXP">+30 XP</div>
+  </div>
+
+  <div class="rp-chat" id="rpChat"></div>
+
+  <div class="rp-input-bar" id="rpInputBar">
+    <div class="rp-hint" id="rpHint" style="display:none;"></div>
+    <button class="rp-mic-btn" id="rpMicBtn" onclick="ouvirResposta()" disabled>
+      <span id="rpMicIco">🎤</span>
+      <span id="rpMicLbl">Toque para falar</span>
+    </button>
+  </div>
+
+</div><!-- fim #screen-roleplay -->
 
 
 <script>
@@ -1537,11 +1760,17 @@ const modulos = {
 // As três telas possíveis: screen-dashboard, screen-lesson, screen-result.
 // ═══════════════════════════════════════════════════════════════
 
-const TELAS = ['screen-dashboard', 'screen-lesson', 'screen-result'];
+const TELAS = ['screen-dashboard', 'screen-lesson', 'screen-result', 'screen-roleplay-menu', 'screen-roleplay'];
 
 function show(id) {
   TELAS.forEach(s => {
-    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
+    const el = document.getElementById(s);
+    if (!el) return;
+    if (s === id) {
+      el.style.display = (s === 'screen-roleplay') ? 'flex' : 'block';
+    } else {
+      el.style.display = 'none';
+    }
   });
 }
 
@@ -1566,13 +1795,24 @@ function voltarDashboard() {
  * Atualiza o tab ativo e faz scroll suave até a seção correspondente.
  */
 function navegar(aba) {
-  const abas   = ['inicio', 'temas', 'praticar', 'progresso'];
-  const alvos  = {
-    inicio:   document.getElementById('screen-dashboard'),
-    temas:    document.getElementById('sec-modulos'),
-    praticar: document.getElementById('sec-licao'),
-    progresso:document.getElementById('sec-progresso'),
+  // "Praticar" vai direto para o menu de role-play
+  if (aba === 'praticar') {
+    TELAS.forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = (s === 'screen-roleplay-menu') ? 'block' : 'none';
+    });
+    return;
+  }
+
+  const abas  = ['inicio', 'temas', 'praticar', 'progresso'];
+  const alvos = {
+    inicio:    document.getElementById('screen-dashboard'),
+    temas:     document.getElementById('sec-modulos'),
+    progresso: document.getElementById('sec-progresso'),
   };
+
+  // Garantir que estamos no dashboard antes de scrollar
+  if (aba !== 'inicio') show('screen-dashboard');
 
   // Atualiza classe active nos tabs
   document.querySelectorAll('.pe-nav-item').forEach((el, i) => {
@@ -1581,7 +1821,7 @@ function navegar(aba) {
 
   // Scroll suave para a seção
   const alvo = alvos[aba];
-  if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (alvo) setTimeout(() => alvo.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
 function repetirAula() {
@@ -1637,7 +1877,6 @@ function proximo() {
     atual++;
     mostrarFrase(atual);
   } else {
-    // Última frase concluída → tela de resultado
     document.getElementById('resultMsg').textContent = modulos[moduloAtual].resultado;
     show('screen-result');
   }
@@ -1651,207 +1890,76 @@ function anterior() {
   }
 }
 
-
 // ═══════════════════════════════════════════════════════════════
-// ÁUDIO — TTS via Web Speech API
-//
-// NOTA ARQUITETURAL: ElevenLabs foi descartado por bloqueio de CORS
-// ao chamar a API diretamente do browser. A solução identificada é
-// um proxy serverless Vercel (/api/tts.js) com a chave em variável
-// de ambiente. Não implementar fetch direto ao ElevenLabs.
+// LÓGICA DE PRONÚNCIA — STT via Web Speech API
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Reseta o estado de áudio E de microfone.
- * Os dois são resetados juntos porque navegar para outra frase
- * ou voltar ao dashboard deve cancelar qualquer operação ativa.
- */
-function resetAudio() {
-  // — TTS —
-  if (synth.speaking) synth.cancel();
-  const ico = document.getElementById('audioIco');
-  if (!ico) return;
-  ico.textContent          = '▶';
-  ico.style.background     = '#D4AF37';
-  document.getElementById('audioLbl').textContent = 'Ouvir voz nativa';
-  document.getElementById('audioBtn').disabled    = false;
-
-  // — STT (resetado aqui para garantir estado limpo ao trocar de frase) —
-  micAtivo = false;
-  if (recognition) {
-    try { recognition.stop(); } catch (e) { /* ignora erros ao parar */ }
-    recognition = null;
-  }
-  const micBtn = document.getElementById('micBtn');
-  if (micBtn) {
-    micBtn.classList.remove('listening');
-    micBtn.disabled = false;
-    document.getElementById('micIco').textContent = '🎤';
-    document.getElementById('micLbl').textContent = 'Testar minha pronúncia';
-  }
-  const resultEl = document.getElementById('pronunciResult');
-  if (resultEl) resultEl.style.display = 'none';
-}
-
-/** Toca (ou pausa) o áudio da frase atual via Web Speech API. */
-function tocarAudio() {
-  const ico = document.getElementById('audioIco');
-  const lbl = document.getElementById('audioLbl');
-
-  // Se já está tocando, cancela (toggle)
-  if (synth.speaking) {
-    synth.cancel();
-    ico.textContent      = '▶';
-    ico.style.background = '#D4AF37';
-    lbl.textContent      = 'Ouvir voz nativa';
-    return;
-  }
-
-  carregarVoz(); // chamada defensiva caso onvoiceschanged tenha sido assíncrono
-
-  const frases = modulos[moduloAtual].frases;
-  const utt = new SpeechSynthesisUtterance(frases[atual].en);
-  utt.lang   = 'en-US';
-  utt.rate   = 0.82;   // ligeiramente mais lento que o natural para facilitar a escuta
-  utt.pitch  = 0.95;
-  utt.volume = 1;
-  if (vozSelecionada) utt.voice = vozSelecionada;
-
-  utt.onend  = () => {
-    ico.textContent      = '▶';
-    ico.style.background = '#D4AF37';
-    lbl.textContent      = 'Ouvir novamente';
-  };
-  utt.onerror = () => {
-    ico.textContent      = '⚠️';
-    ico.style.background = '#8B0000';
-    lbl.textContent      = 'Erro de áudio';
-  };
-
-  ico.textContent      = '⏸';
-  ico.style.background = '#b8962e';
-  lbl.textContent      = 'Reproduzindo...';
-
-  synth.speak(utt);
-}
-
-
-// ═══════════════════════════════════════════════════════════════
-// PRONÚNCIA — STT via Web Speech API
-//
-// Thresholds de qualidade (não alterar sem revisão pedagógica):
-//   ≥ 85% → "Excelente" (success)
-//   ≥ 50% → "Quase lá"  (partial)
-//   < 50% → "Tente novamente" (fail)
-//
-// Algoritmo: sobreposição de palavras (word-overlap) após
-// normalização (minúsculas, remoção de pontuação).
-// ═══════════════════════════════════════════════════════════════
-
-/** Cria e configura uma instância do SpeechRecognition. */
-function initRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return null;
-  const r = new SR();
-  r.lang            = 'en-US';
-  r.continuous      = false;
-  r.interimResults  = false;
-  r.maxAlternatives = 3;
-  return r;
-}
-
-/**
- * Calcula similaridade entre o que foi ouvido (a) e o alvo (b).
- * Retorna valor entre 0 e 1.
- */
-function similaridade(a, b) {
-  const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-  const na = norm(a), nb = norm(b);
-  if (na === nb) return 1.0;
-  const wa = na.split(/\s+/);
-  const wb = nb.split(/\s+/);
-  const comuns = wa.filter(w => wb.includes(w)).length;
-  return comuns / Math.max(wa.length, wb.length);
-}
-
-/** Exibe o painel de resultado com base no score de similaridade. */
-function mostrarResultadoPronuncia(heard, target) {
-  const score   = similaridade(heard, target);
-  const el      = document.getElementById('pronunciResult');
-  const icon    = document.getElementById('prIcon');
-  const title   = document.getElementById('prTitle');
-  const heardEl = document.getElementById('prHeard');
-
-  el.className        = 'pronunc-result'; // remove classes de estado anterior
-  heardEl.textContent = heard || '(não entendi)';
-
-  if (score >= 0.85) {
-    el.classList.add('success');
-    icon.textContent  = '✅';
-    title.textContent = 'Excelente! Pronúncia perfeita!';
-  } else if (score >= 0.5) {
-    el.classList.add('partial');
-    icon.textContent  = '⚠️';
-    title.textContent = 'Quase lá! Continue praticando.';
-  } else {
-    el.classList.add('fail');
-    icon.textContent  = '🔄';
-    title.textContent = 'Tente novamente — ouça e repita!';
-  }
-  el.style.display = 'block';
-}
-
-/** Reseta o botão de microfone para o estado padrão. */
 function resetMic() {
   micAtivo = false;
-  if (recognition) {
-    try { recognition.stop(); } catch (e) { /* ignora */ }
-  }
   const btn = document.getElementById('micBtn');
   const ico = document.getElementById('micIco');
   const lbl = document.getElementById('micLbl');
-  if (!btn) return;
-  btn.classList.remove('listening');
-  btn.disabled    = false;
-  ico.textContent = '🎤';
-  lbl.textContent = 'Testar minha pronúncia';
+  if (btn) { btn.disabled = false; btn.classList.remove('listening'); }
+  if (ico) ico.textContent = '🎤';
+  if (lbl) lbl.textContent = 'Testar minha pronúncia';
 }
 
-/** Inicia (ou cancela) o reconhecimento de voz para a frase atual. */
 function testarPronuncia() {
-  // Para o TTS se estiver tocando
-  if (synth.speaking) synth.cancel();
+  if (micAtivo) return;
 
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    alert('Seu navegador não suporta reconhecimento de voz. Use o Safari no iPhone.');
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Reconhecimento de voz não suportado. Use o Safari no iPhone.');
     return;
   }
 
-  // Toggle: se mic já está ativo, cancela
-  if (micAtivo) { resetMic(); return; }
-
-  const btn      = document.getElementById('micBtn');
-  const ico      = document.getElementById('micIco');
-  const lbl      = document.getElementById('micLbl');
   const resultEl = document.getElementById('pronunciResult');
+  resultEl.className     = 'pronunc-result';
+  resultEl.style.display = 'none';
 
-  resultEl.style.display = 'none'; // oculta resultado anterior
+  const btn = document.getElementById('micBtn');
+  const ico = document.getElementById('micIco');
+  const lbl = document.getElementById('micLbl');
 
-  recognition = initRecognition();
+  btn.disabled = true;
+  btn.classList.add('listening');
+  ico.textContent = '⏹';
+  lbl.textContent = 'Ouvindo...';
+  micAtivo = true;
 
-  recognition.onstart = () => {
-    micAtivo        = true;
-    btn.classList.add('listening');
-    ico.textContent = '⏹';
-    lbl.textContent = 'Ouvindo... fale agora!';
-    btn.disabled    = false;
-  };
+  const frase = modulos[moduloAtual].frases[atual].en.toLowerCase();
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang           = 'en-US';
+  recognition.continuous     = false;
+  recognition.interimResults = false;
 
   recognition.onresult = (e) => {
-    const heard  = e.results[0][0].transcript;
-    const target = modulos[moduloAtual].frases[atual].en;
-    mostrarResultadoPronuncia(heard, target);
+    const heard = e.results[0][0].transcript.toLowerCase();
+    const conf  = e.results[0][0].confidence;
+
+    resultEl.style.display = 'block';
+    document.getElementById('prHeard').textContent = heard;
+
+    const palavrasFrase   = frase.replace(/[^a-z\s]/g, '').split(/\s+/);
+    const palavrasOuvidas = heard.replace(/[^a-z\s]/g, '').split(/\s+/);
+    const acertos = palavrasFrase.filter(p => palavrasOuvidas.includes(p)).length;
+    const score   = acertos / palavrasFrase.length;
+
+    if (score >= 0.85 || conf >= 0.85) {
+      resultEl.className = 'pronunc-result success';
+      document.getElementById('prIcon').textContent  = '🌟';
+      document.getElementById('prTitle').textContent = 'Excelente pronúncia!';
+    } else if (score >= 0.5 || conf >= 0.5) {
+      resultEl.className = 'pronunc-result partial';
+      document.getElementById('prIcon').textContent  = '👍';
+      document.getElementById('prTitle').textContent = 'Bom! Continue praticando.';
+    } else {
+      resultEl.className = 'pronunc-result fail';
+      document.getElementById('prIcon').textContent  = '🔄';
+      document.getElementById('prTitle').textContent = 'Tente novamente!';
+    }
+    resetMic();
   };
 
   recognition.onerror = (e) => {
@@ -1866,13 +1974,289 @@ function testarPronuncia() {
       alert('Permissão de microfone negada. Vá em Ajustes > Safari e permita o microfone.');
     }
   };
+
   recognition.onend = () => { resetMic(); };
-  try {
-    recognition.start();
-  } catch (e) {
-    resetMic();
+
+  try { recognition.start(); } catch (e) { resetMic(); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROLE-PLAY — Roteiros e lógica de conversa simulada
+// ═══════════════════════════════════════════════════════════════
+
+const roteiros = {
+  hotel: {
+    titulo: 'Check-in no Hotel',
+    personagem: 'Recepcionista',
+    turnos: [
+      { bot: "Good evening! Welcome to the Grand Hotel. Do you have a reservation?", pt: "Boa noite! Você tem uma reserva?", keywords: ['yes','have','reservation','booking','do'], dica: "💡 Diga: Yes, I have a reservation." },
+      { bot: "Great! What name is the reservation under?", pt: "Qual é o nome da reserva?", keywords: ['name','silva','paty','my','is'], dica: "💡 Diga: My name is Paty Silva." },
+      { bot: "Perfect, Mrs. Silva! Smoking or non-smoking room?", pt: "Quarto para fumantes ou não fumantes?", keywords: ['non','smoking','no','smoke'], dica: "💡 Diga: Non-smoking, please." },
+      { bot: "Excellent! Here's your key. Do you need the WiFi password?", pt: "Aqui está sua chave! Precisa da senha do WiFi?", keywords: ['wifi','wi-fi','password','internet','yes','please'], dica: "💡 Diga: Yes, please!" },
+      { bot: "Of course! The password is HOTEL2024. Enjoy your stay!", pt: "A senha é HOTEL2024. Aproveite sua estadia!", keywords: ['thank','thanks','you'], dica: "💡 Diga: Thank you!" }
+    ]
+  },
+  aeroporto: {
+    titulo: 'Check-in no Aeroporto',
+    personagem: 'Atendente',
+    turnos: [
+      { bot: "Good morning! Where are you flying to today?", pt: "Bom dia! Para onde você vai voar?", keywords: ['new','york','miami','us','states','flying','going','to'], dica: "💡 Diga: I'm flying to New York." },
+      { bot: "How many bags are you checking in today?", pt: "Quantas malas você vai despachar?", keywords: ['one','two','just','bag','bags','suitcase'], dica: "💡 Diga: Just one bag, please." },
+      { bot: "Did you pack your bags yourself?", pt: "Você mesma fez as malas?", keywords: ['yes','myself','i','did','packed'], dica: "💡 Diga: Yes, I packed them myself." },
+      { bot: "Any liquids or sharp objects in your carry-on?", pt: "Tem líquidos ou objetos cortantes na bagagem de mão?", keywords: ['no','nothing','don','dont'], dica: "💡 Diga: No, nothing like that." },
+      { bot: "Perfect! Here's your boarding pass. Gate 22B. Have a great flight!", pt: "Aqui está seu cartão de embarque. Portão 22B!", keywords: ['thank','thanks','you'], dica: "💡 Diga: Thank you!" }
+    ]
+  },
+  aduana: {
+    titulo: 'Aduana — EUA',
+    personagem: 'Agente de Imigração',
+    turnos: [
+      { bot: "Passport, please. What is the purpose of your visit?", pt: "Passaporte, por favor. Qual o motivo da sua visita?", keywords: ['tourism','tourist','vacation','holiday','visit','pleasure'], dica: "💡 Diga: Tourism." },
+      { bot: "How long will you be staying in the United States?", pt: "Por quanto tempo vai ficar nos EUA?", keywords: ['week','weeks','days','two','three','ten'], dica: "💡 Diga: Two weeks." },
+      { bot: "Where will you be staying?", pt: "Onde você vai se hospedar?", keywords: ['hotel','new','york','manhattan','airbnb'], dica: "💡 Diga: At a hotel in New York." },
+      { bot: "Do you have anything to declare?", pt: "Você tem algo a declarar?", keywords: ['no','nothing','declare','none'], dica: "💡 Diga: No, nothing to declare." },
+      { bot: "Welcome to the United States! Enjoy your stay.", pt: "Bem-vinda aos Estados Unidos!", keywords: ['thank','thanks','you'], dica: "💡 Diga: Thank you!" }
+    ]
+  },
+  restaurante: {
+    titulo: 'No Restaurante',
+    personagem: 'Garçom',
+    turnos: [
+      { bot: "Good evening! Do you have a reservation?", pt: "Boa noite! Você tem uma reserva?", keywords: ['no','don','not','walk'], dica: "💡 Diga: No, I don't have a reservation." },
+      { bot: "No problem! Table for how many?", pt: "Sem problema! Mesa para quantas pessoas?", keywords: ['one','two','just','me','for','people'], dica: "💡 Diga: Just one, please." },
+      { bot: "Right this way! Are you ready to order?", pt: "Por aqui! Pronta para pedir?", keywords: ['water','like','yes','ready','start'], dica: "💡 Diga: I'd like some water, please." },
+      { bot: "Of course! And your main course?", pt: "Claro! E o prato principal?", keywords: ['chicken','fish','pasta','steak','salad','have','like'], dica: "💡 Diga: I'll have the chicken, please." },
+      { bot: "Excellent choice! Anything else?", pt: "Ótima escolha! Mais alguma coisa?", keywords: ['check','bill','please','that','all','no'], dica: "💡 Diga: The check, please." }
+    ]
+  },
+  taxi: {
+    titulo: 'No Táxi',
+    personagem: 'Motorista',
+    turnos: [
+      { bot: "Hello! Where to?", pt: "Olá! Para onde?", keywords: ['hotel','times','square','airport','downtown','please'], dica: "💡 Diga: Times Square Hotel, please." },
+      { bot: "Sure thing! First time in New York?", pt: "É sua primeira vez em Nova York?", keywords: ['yes','first','time','never','been'], dica: "💡 Diga: Yes, it's my first time!" },
+      { bot: "You're gonna love it! Prefer a specific route?", pt: "Você vai adorar! Prefere alguma rota?", keywords: ['no','fastest','quickest','fine','up','you'], dica: "💡 Diga: No, the fastest route is fine." },
+      { bot: "We'll be there in 20 minutes. Cash or card?", pt: "Chegamos em 20 minutos. Dinheiro ou cartão?", keywords: ['card','credit','debit','cash'], dica: "💡 Diga: Card, please." },
+      { bot: "Here we are! That'll be $18.50.", pt: "Chegamos! São $18,50.", keywords: ['keep','change','here','thank','you','go'], dica: "💡 Diga: Keep the change!" }
+    ]
+  },
+  compras: {
+    titulo: 'Fazendo Compras',
+    personagem: 'Vendedora',
+    turnos: [
+      { bot: "Hi there! Can I help you find something?", pt: "Olá! Posso te ajudar a encontrar algo?", keywords: ['just','looking','browsing','no','thanks'], dica: "💡 Diga: I'm just looking, thank you." },
+      { bot: "Of course! Did you find what you were looking for?", pt: "Claro! Encontrou o que procurava?", keywords: ['yes','how','much','this','price'], dica: "💡 Diga: Yes! How much is this?" },
+      { bot: "That blouse is $45. Would you like to try it on?", pt: "Esta blusa é $45. Quer experimentar?", keywords: ['larger','bigger','size','do','have','small','medium','large'], dica: "💡 Diga: Do you have this in a larger size?" },
+      { bot: "Yes, we have it in large! Here you go.", pt: "Sim, temos no G! Aqui está.", keywords: ['take','perfect','great','thank'], dica: "💡 Diga: I'll take it, thank you!" },
+      { bot: "Wonderful! Cash or card?", pt: "Ótimo! Dinheiro ou cartão?", keywords: ['card','credit','visa','cash'], dica: "💡 Diga: Card, please." }
+    ]
+  }
+};
+
+// Estado do role-play
+let rpModulo     = null;
+let rpTurno      = 0;
+let rpAcertos    = 0;
+let rpTentativas = 0;
+
+function iniciarRolePlay(modulo) {
+  rpModulo     = modulo;
+  rpTurno      = 0;
+  rpAcertos    = 0;
+  rpTentativas = 0;
+
+  const r = roteiros[modulo];
+  document.getElementById('rpTag').textContent    = 'ROLE-PLAY · ' + modulo.toUpperCase();
+  document.getElementById('rpTitle').textContent  = r.titulo;
+  document.getElementById('rpChat').innerHTML     = '';
+  document.getElementById('rpHint').style.display = 'none';
+  document.getElementById('rpInputBar').style.display = 'block';
+
+  const btn = document.getElementById('rpMicBtn');
+  btn.disabled = true;
+  btn.classList.remove('listening');
+  document.getElementById('rpMicIco').textContent = '🎤';
+  document.getElementById('rpMicLbl').textContent = 'Toque para falar';
+
+  TELAS.forEach(s => {
+    const el = document.getElementById(s);
+    if (!el) return;
+    el.style.display = (s === 'screen-roleplay') ? 'flex' : 'none';
+  });
+
+  setTimeout(() => botFala(0), 800);
+}
+
+function sairRolePlay() {
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  micAtivo = false;
+  TELAS.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = (s === 'screen-roleplay-menu') ? 'block' : 'none';
+  });
+}
+
+function addBotBubble(texto, subtexto) {
+  const chat = document.getElementById('rpChat');
+  const div  = document.createElement('div');
+  div.className = 'rp-bubble bot';
+  div.innerHTML =
+    '<div class="rp-bubble-header">🎬 ' + roteiros[rpModulo].personagem + '</div>' +
+    texto +
+    (subtexto ? '<div class="rp-bubble-sub">' + subtexto + '</div>' : '');
+  chat.appendChild(div);
+  setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
+}
+
+function botFala(idx) {
+  const r = roteiros[rpModulo];
+  if (idx >= r.turnos.length) { concluirRolePlay(); return; }
+
+  const turno = r.turnos[idx];
+  addBotBubble(turno.bot, turno.pt);
+
+  const utt = new SpeechSynthesisUtterance(turno.bot);
+  if (vozSelecionada) utt.voice = vozSelecionada;
+  utt.lang = 'en-US';
+  utt.rate = 0.9;
+
+  const habilitarMic = () => {
+    const btn = document.getElementById('rpMicBtn');
+    if (btn) btn.disabled = false;
+    rpTentativas = 0;
+    const hint = document.getElementById('rpHint');
+    if (hint) hint.style.display = 'none';
+  };
+
+  utt.onend = habilitarMic;
+  setTimeout(habilitarMic, Math.max(2500, turno.bot.length * 55));
+  synth.speak(utt);
+}
+
+function ouvirResposta() {
+  if (micAtivo) return;
+
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    const chat = document.getElementById('rpChat');
+    const d = document.createElement('div');
+    d.className = 'rp-bubble dica';
+    d.textContent = '⚠️ Microfone não suportado. Use o Safari no iPhone.';
+    chat.appendChild(d);
+    return;
+  }
+
+  const btn = document.getElementById('rpMicBtn');
+  const ico = document.getElementById('rpMicIco');
+  const lbl = document.getElementById('rpMicLbl');
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang           = 'en-US';
+  recognition.continuous     = false;
+  recognition.interimResults = false;
+
+  micAtivo = true;
+  btn.disabled = false;
+  btn.classList.add('listening');
+  ico.textContent = '⏹';
+  lbl.textContent = 'Ouvindo... fale agora!';
+
+  recognition.onresult = (e) => {
+    const heard = e.results[0][0].transcript.toLowerCase();
+    micAtivo = false;
+    btn.classList.remove('listening');
+    ico.textContent = '🎤';
+    lbl.textContent = 'Toque para falar';
+    btn.disabled = true;
+    processarResposta(heard);
+  };
+
+  recognition.onerror = (e) => {
+    micAtivo = false;
+    btn.classList.remove('listening');
+    ico.textContent = '🎤';
+    lbl.textContent = 'Toque para falar';
+    btn.disabled = false;
+    const chat = document.getElementById('rpChat');
+    const d = document.createElement('div');
+    d.className = 'rp-bubble dica';
+    if (e.error === 'no-speech') {
+      d.textContent = '🔇 Não ouvi nada. Tente de novo!';
+    } else if (e.error === 'not-allowed') {
+      d.textContent = '🎤 Permissão negada. Vá em Ajustes > Safari.';
+    }
+    if (d.textContent) chat.appendChild(d);
+  };
+
+  recognition.onend = () => { if (micAtivo) micAtivo = false; };
+
+  try { recognition.start(); } catch(e) { micAtivo = false; }
+}
+
+function processarResposta(heard) {
+  const turno = roteiros[rpModulo].turnos[rpTurno];
+  const acertou = turno.keywords.some(kw => heard.includes(kw));
+
+  const chat = document.getElementById('rpChat');
+  const ub = document.createElement('div');
+  ub.className = 'rp-bubble user';
+  ub.textContent = '“' + heard + '”';
+  chat.appendChild(ub);
+  setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
+
+  if (acertou) {
+    rpAcertos++;
+    rpTurno++;
+    setTimeout(() => botFala(rpTurno), 700);
+  } else {
+    rpTentativas++;
+    if (rpTentativas >= 2) {
+      const hint = document.getElementById('rpHint');
+      hint.textContent = turno.dica;
+      hint.style.display = 'block';
+      addBotBubble("I see... let me continue!", '');
+      rpTurno++;
+      setTimeout(() => botFala(rpTurno), 2000);
+    } else {
+      addBotBubble("I'm sorry? Could you repeat that, please?", '');
+      const utt2 = new SpeechSynthesisUtterance("I'm sorry? Could you repeat that, please?");
+      if (vozSelecionada) utt2.voice = vozSelecionada;
+      utt2.lang = 'en-US';
+      const btn = document.getElementById('rpMicBtn');
+      utt2.onend = () => { if (btn) btn.disabled = false; };
+      setTimeout(() => { if (btn) btn.disabled = false; }, 2800);
+      synth.speak(utt2);
+    }
   }
 }
+
+function concluirRolePlay() {
+  const total = roteiros[rpModulo].turnos.length;
+  const pct   = Math.round((rpAcertos / total) * 100);
+  let emoji, msg;
+  if (pct >= 80) { emoji = '🏆'; msg = 'Incrível! Você arrasou nessa conversa!'; }
+  else if (pct >= 60) { emoji = '⭐'; msg = 'Muito bom! Continue praticando!'; }
+  else { emoji = '💪'; msg = 'Boa tentativa! Pratique mais e vai ficar ótimo!'; }
+
+  document.getElementById('rpInputBar').style.display = 'none';
+
+  const chat = document.getElementById('rpChat');
+  const fim = document.createElement('div');
+  fim.className = 'rp-fim';
+  fim.innerHTML =
+    '<div class="rp-fim-emoji">' + emoji + '</div>' +
+    '<div class="rp-fim-titulo">Conversa concluída!</div>' +
+    '<div class="rp-fim-msg">' + msg + '</div>' +
+    '<div class="rp-fim-card">' +
+      '<div class="rp-fim-score">' + rpAcertos + '/' + total + '</div>' +
+      '<div class="rp-fim-label">respostas compreendidas</div>' +
+    '</div>' +
+    '<button class="rp-fim-btn primary" onclick="iniciarRolePlay(\'' + rpModulo + '\')">🔄 Praticar novamente</button>' +
+    '<button class="rp-fim-btn secondary" onclick="sairRolePlay()">← Escolher outro cenário</button>';
+  chat.appendChild(fim);
+  setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 100);
+}
+
 // INICIALIZAÇÃO
 show('screen-dashboard');
 </script>
