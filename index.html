@@ -1,136 +1,946 @@
-
 <!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  PatyEnglish — index.html                                   ║
+  ║  PWA de ensino de inglês para viagens                       ║
+  ║  Deploy: GitHub → Vercel (automático via push)              ║
+  ║                                                             ║
+  ║  ESTRUTURA DESTE ARQUIVO:                                   ║
+  ║  1. <head>    — meta tags, fontes Google                    ║
+  ║  2. <style>   — todo o CSS (seções comentadas abaixo)       ║
+  ║  3. <body>    — 3 telas HTML:                               ║
+  ║     · #screen-dashboard  → tela inicial                     ║
+  ║     · #screen-lesson     → aula (frases + áudio + mic)      ║
+  ║     · #screen-result     → conclusão da aula                ║
+  ║  4. <script>  — todo o JS (seções comentadas abaixo):       ║
+  ║     · Estado global                                         ║
+  ║     · Inicialização de voz (TTS)                            ║
+  ║     · Dados dos módulos (conteúdo das aulas)                ║
+  ║     · Navegação entre telas                                 ║
+  ║     · Lógica de aula (frases, barra de progresso)           ║
+  ║     · Áudio — TTS via Web Speech API                        ║
+  ║     · Pronúncia — STT via Web Speech API                    ║
+  ║     · Inicialização                                         ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  DECISÕES TÉCNICAS IMPORTANTES:
+  · Arquitetura single-file: todo CSS, HTML e JS neste arquivo.
+    Não há build tooling nem dependências de runtime.
+  · TTS: Web Speech API (nativa do browser). ElevenLabs foi
+    descartado por bloqueio de CORS. Só retomar via proxy
+    Vercel (/api/tts.js) com chave em variável de ambiente.
+  · STT: SpeechRecognition API, lang en-US.
+    Thresholds de qualidade: ≥85% = excelente, ≥50% = parcial.
+    Não alterar esses limiares sem revisão pedagógica.
+-->
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PatyEnglish">
-<title>PatyEnglish</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width:390px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
-.pe-header{background:linear-gradient(160deg,#1a2e42 0%,#0D1B2A 100%);padding:48px 24px 28px;position:relative;border-bottom:1px solid rgba(212,175,55,0.15);}
-.pe-greeting-small{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;margin-bottom:4px;font-weight:500;}
-.pe-greeting-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:#F5F0E8;margin-bottom:2px;}
-.pe-greeting-sub{font-size:13px;color:rgba(245,240,232,0.5);font-weight:300;}
-.pe-avatar-ring{position:absolute;right:24px;top:44px;width:54px;height:54px;border-radius:50%;border:2px solid #D4AF37;background:#1a2e42;display:flex;align-items:center;justify-content:center;font-size:22px;}
-.pe-streak-bar{display:flex;align-items:center;gap:8px;margin-top:16px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:8px 14px;width:fit-content;}
-.pe-streak-icon{font-size:16px;}
-.pe-streak-text{font-size:13px;color:#D4AF37;font-weight:500;}
-.pe-streak-muted{font-size:12px;color:rgba(245,240,232,0.4);}
-.pe-brad-card{margin:20px 16px;background:linear-gradient(135deg,#1E3A52 0%,#162B3F 100%);border:1px solid rgba(212,175,55,0.25);border-radius:16px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;}
-.pe-brad-bubble{background:#D4AF37;border-radius:50%;width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
-.pe-brad-name{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;font-weight:500;margin-bottom:4px;}
-.pe-brad-msg{font-size:14px;color:rgba(245,240,232,0.85);line-height:1.5;}
-.pe-section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.4);font-weight:500;padding:0 20px;margin-bottom:12px;}
-.pe-lesson-card{margin:0 16px 20px;background:#D4AF37;border-radius:16px;padding:20px;cursor:pointer;position:relative;overflow:hidden;}
-.pe-lesson-card::after{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.1);}
-.pe-lesson-tag{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(13,27,42,0.6);font-weight:500;margin-bottom:6px;}
-.pe-lesson-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#0D1B2A;margin-bottom:12px;line-height:1.2;}
-.pe-lesson-meta{display:flex;align-items:center;gap:16px;}
-.pe-lesson-meta-item{font-size:12px;color:rgba(13,27,42,0.65);}
-.pe-play-btn{position:absolute;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;background:#0D1B2A;display:flex;align-items:center;justify-content:center;color:#D4AF37;font-size:18px;}
-.pe-progress-section{margin:0 16px 20px;}
-.pe-progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.pe-progress-title{font-size:13px;color:rgba(245,240,232,0.7);}
-.pe-progress-xp{font-size:13px;color:#D4AF37;font-weight:500;}
-.pe-progress-track{height:4px;background:rgba(245,240,232,0.08);border-radius:2px;overflow:hidden;margin-bottom:6px;}
-.pe-progress-fill{height:100%;width:24%;background:#D4AF37;border-radius:2px;}
-.pe-progress-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(245,240,232,0.3);}
-.pe-modules-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 16px 20px;}
-.pe-module-card{background:#132336;border:1px solid rgba(212,175,55,0.2);border-radius:14px;padding:16px 14px;cursor:pointer;transition:border-color 0.2s;}
-.pe-module-card:hover{border-color:rgba(212,175,55,0.4);}
-.pe-module-icon{font-size:22px;margin-bottom:8px;display:block;}
-.pe-module-name{font-size:13px;font-weight:500;color:rgba(245,240,232,0.9);line-height:1.3;margin-bottom:6px;}
-.pe-module-prog{height:2px;background:rgba(245,240,232,0.07);border-radius:1px;overflow:hidden;}
-.pe-module-prog-fill{height:100%;background:#D4AF37;border-radius:1px;}
-.pe-badge-row{display:flex;gap:10px;margin:0 16px 24px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
-.pe-badge{flex-shrink:0;background:#132336;border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:10px 14px;text-align:center;min-width:72px;}
-.pe-badge-icon{font-size:20px;display:block;margin-bottom:4px;}
-.pe-badge-label{font-size:11px;color:rgba(245,240,232,0.5);}
-.pe-divider{height:1px;background:rgba(245,240,232,0.05);margin:4px 16px 16px;}
-.pe-nav{position:sticky;bottom:0;background:#0D1B2A;border-top:1px solid rgba(212,175,55,0.12);display:flex;justify-content:space-around;padding:12px 0 20px;}
-.pe-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;opacity:0.4;}
-.pe-nav-item.active{opacity:1;}
-.pe-nav-icon{font-size:22px;color:#F5F0E8;}
-.pe-nav-label{font-size:10px;color:rgba(245,240,232,0.7);}
-.pe-nav-dot{width:4px;height:4px;border-radius:50%;}
-.pe-nav-item.active .pe-nav-dot{background:#D4AF37;}
-/* LESSON */
-#screen-lesson{display:none;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:44px 20px 16px;}
-.back-btn{width:36px;height:36px;border-radius:50%;background:rgba(245,240,232,0.08);border:none;color:#F5F0E8;font-size:18px;cursor:pointer;}
-.lmeta{text-align:center;}
-.ltag{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;font-weight:500;}
-.ltitle{font-size:15px;font-weight:500;color:#F5F0E8;margin-top:2px;}
-.xpchip{background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:6px 12px;font-size:12px;color:#D4AF37;font-weight:500;}
-.steps{display:flex;gap:4px;padding:0 20px 16px;}
-.dot{height:3px;border-radius:2px;flex:1;background:rgba(245,240,232,0.12);transition:background 0.3s;}
-.dot.done{background:#D4AF37;}
-.dot.active{background:rgba(212,175,55,0.5);}
-.vbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.18);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(212,175,55,0.8);margin:0 20px 16px;}
-.brad{display:flex;gap:14px;align-items:flex-start;margin:0 16px 18px;background:#1a2e42;border-radius:14px;padding:16px;border:1px solid rgba(212,175,55,0.15);}
-.bav{width:40px;height:40px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.bname{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#D4AF37;margin-bottom:4px;font-weight:500;}
-.bmsg{font-size:14px;color:rgba(245,240,232,0.8);line-height:1.5;}
-.slabel{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.3);padding:0 20px;margin-bottom:12px;}
-.card{background:#132336;border:1px solid rgba(212,175,55,0.2);border-radius:18px;padding:22px 20px;margin:0 16px 12px;}
-.pen{font-family:'Playfair Display',serif;font-size:22px;color:#F5F0E8;line-height:1.3;margin-bottom:8px;}
-.ppt{font-size:14px;color:rgba(245,240,232,0.5);font-weight:300;margin-bottom:14px;}
-.pph{font-size:13px;color:#D4AF37;background:rgba(212,175,55,0.08);border-radius:8px;padding:8px 12px;font-family:monospace;margin-bottom:14px;}
-.abtn{display:flex;align-items:center;gap:10px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:30px;padding:10px 16px;cursor:pointer;width:100%;}
-.abtn:disabled{opacity:0.5;cursor:not-allowed;}
-.aico{width:32px;height:32px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.albl{font-size:13px;color:#D4AF37;font-weight:500;}
-.asub{font-size:11px;color:rgba(245,240,232,0.4);}
-.tip{background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.1);border-radius:12px;padding:14px 16px;margin:0 16px 20px;display:flex;gap:12px;}
-.tipico{font-size:18px;flex-shrink:0;}
-.tiptxt{font-size:13px;color:rgba(245,240,232,0.65);line-height:1.5;}
-.tiptxt b{color:#D4AF37;font-weight:500;}
-.navrow{display:flex;gap:12px;padding:12px 16px 36px;}
-.bprev{flex:1;padding:14px;border-radius:12px;border:1px solid rgba(245,240,232,0.15);background:transparent;color:rgba(245,240,232,0.6);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;}
-.bnext{flex:2;padding:14px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
-#screen-result{display:none;padding:40px 24px;text-align:center;}
-.rico{font-size:56px;margin-bottom:20px;}
-.rtitle{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:8px;}
-.rsub{font-size:15px;color:rgba(245,240,232,0.55);margin-bottom:28px;line-height:1.6;}
-.xpbox{background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:16px;padding:20px;margin-bottom:24px;}
-.xpnum{font-family:'Playfair Display',serif;font-size:40px;color:#D4AF37;}
-.xplbl{font-size:13px;color:rgba(245,240,232,0.5);margin-top:4px;}
-.rbtns{display:flex;flex-direction:column;gap:12px;}
-.rbtn1{padding:16px;border-radius:12px;border:none;background:#D4AF37;color:#0D1B2A;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
-.rbtn2{padding:14px;border-radius:12px;border:1px solid rgba(245,240,232,0.2);background:transparent;color:rgba(245,240,232,0.7);font-size:15px;font-family:'DM Sans',sans-serif;cursor:pointer;}
-/* PRONÚNCIA */
-.mic-btn{display:flex;align-items:center;gap:10px;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.3);border-radius:30px;padding:10px 16px;cursor:pointer;width:100%;margin-top:10px;transition:all 0.2s;}
-.mic-btn:disabled{opacity:0.4;cursor:not-allowed;}
-.mic-btn.listening{background:rgba(255,80,80,0.12);border-color:rgba(255,80,80,0.5);animation:pulse 1.2s ease-in-out infinite;}
-.mic-ico{width:32px;height:32px;border-radius:50%;background:rgba(100,180,255,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:background 0.2s;}
-.mic-btn.listening .mic-ico{background:rgba(255,80,80,0.5);}
-.mic-lbl{font-size:13px;color:rgba(100,180,255,0.9);font-weight:500;}
-.mic-btn.listening .mic-lbl{color:rgba(255,100,100,0.9);}
-.mic-sub{font-size:11px;color:rgba(245,240,232,0.4);}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,0.3);}50%{box-shadow:0 0 0 8px rgba(255,80,80,0);}}
-.pronunc-result{margin:0 16px 10px;border-radius:12px;padding:14px 16px;display:none;animation:fadeIn 0.3s ease;}
-.pronunc-result.success{background:rgba(50,200,100,0.1);border:1px solid rgba(50,200,100,0.3);}
-.pronunc-result.partial{background:rgba(255,200,50,0.1);border:1px solid rgba(255,200,50,0.3);}
-.pronunc-result.fail{background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);}
-.pr-icon{font-size:22px;margin-bottom:6px;}
-.pr-title{font-size:14px;font-weight:500;margin-bottom:4px;}
-.pronunc-result.success .pr-title{color:#50c878;}
-.pronunc-result.partial .pr-title{color:#ffc832;}
-.pronunc-result.fail .pr-title{color:#ff5050;}
-.pr-heard{font-size:12px;color:rgba(245,240,232,0.5);margin-bottom:2px;}
-.pr-heard span{color:rgba(245,240,232,0.8);}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <!-- PWA: permite instalar no iPhone via Safari → "Adicionar à Tela de Início" -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PatyEnglish">
+
+  <title>PatyEnglish</title>
+
+  <!-- Fontes: Playfair Display (títulos elegantes) + DM Sans (corpo legível) -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─────────────────────────────────────────────────────────
+       BASE
+       Reset mínimo + configuração do body.
+       max-width 390px centraliza o layout mobile no desktop.
+    ───────────────────────────────────────────────────────── */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0D1B2A;       /* navy escuro — cor de fundo principal */
+      color: #F5F0E8;            /* off-white — texto principal */
+      max-width: 390px;
+      margin: 0 auto;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — CABEÇALHO
+       Gradiente sutil, saudação personalizada e avatar do Brad.
+    ───────────────────────────────────────────────────────── */
+    .pe-header {
+      background: linear-gradient(160deg, #1a2e42 0%, #0D1B2A 100%);
+      padding: 48px 24px 28px;
+      position: relative;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    .pe-greeting-small {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #D4AF37;            /* dourado — cor de destaque principal */
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .pe-greeting-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: #F5F0E8;
+      margin-bottom: 2px;
+    }
+
+    .pe-greeting-sub {
+      font-size: 13px;
+      color: rgba(245, 240, 232, 0.5);
+      font-weight: 300;
+    }
+
+    .pe-avatar-ring {
+      position: absolute;
+      right: 24px;
+      top: 44px;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 2px solid #D4AF37;
+      background: #1a2e42;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — STREAK (dias consecutivos)
+    ───────────────────────────────────────────────────────── */
+    .pe-streak-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 30px;
+      padding: 8px 14px;
+      width: fit-content;
+    }
+
+    .pe-streak-icon { font-size: 16px; }
+
+    .pe-streak-text {
+      font-size: 13px;
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+    .pe-streak-muted {
+      font-size: 12px;
+      color: rgba(245, 240, 232, 0.4);
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — CARD DO BRAD PITT
+       Cartão clicável que inicia a lição do dia.
+    ───────────────────────────────────────────────────────── */
+    .pe-brad-card {
+      margin: 20px 16px;
+      background: linear-gradient(135deg, #1E3A52 0%, #162B3F 100%);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      cursor: pointer;
+    }
+
+    .pe-brad-bubble {
+      background: #D4AF37;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .pe-brad-name {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #D4AF37;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .pe-brad-msg {
+      font-size: 14px;
+      color: rgba(245, 240, 232, 0.85);
+      line-height: 1.5;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — RÓTULOS DE SEÇÃO
+    ───────────────────────────────────────────────────────── */
+    .pe-section-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(245, 240, 232, 0.4);
+      font-weight: 500;
+      padding: 0 20px;
+      margin-bottom: 12px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — CARD DE LIÇÃO DO DIA
+       Fundo dourado invertido para dar destaque máximo.
+    ───────────────────────────────────────────────────────── */
+    .pe-lesson-card {
+      margin: 0 16px 20px;
+      background: #D4AF37;
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Detalhe decorativo no canto superior direito */
+    .pe-lesson-card::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      top: -20px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .pe-lesson-tag {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(13, 27, 42, 0.6);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .pe-lesson-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #0D1B2A;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .pe-lesson-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .pe-lesson-meta-item {
+      font-size: 12px;
+      color: rgba(13, 27, 42, 0.65);
+    }
+
+    .pe-play-btn {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0D1B2A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #D4AF37;
+      font-size: 18px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — BARRA DE PROGRESSO GERAL (XP / nível)
+    ───────────────────────────────────────────────────────── */
+    .pe-progress-section { margin: 0 16px 20px; }
+
+    .pe-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .pe-progress-title {
+      font-size: 13px;
+      color: rgba(245, 240, 232, 0.7);
+    }
+
+    .pe-progress-xp {
+      font-size: 13px;
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+    .pe-progress-track {
+      height: 4px;
+      background: rgba(245, 240, 232, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .pe-progress-fill {
+      height: 100%;
+      width: 24%;              /* valor fixo — será dinâmico com XP persistido */
+      background: #D4AF37;
+      border-radius: 2px;
+    }
+
+    .pe-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: rgba(245, 240, 232, 0.3);
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — GRADE DE MÓDULOS (2 colunas)
+    ───────────────────────────────────────────────────────── */
+    .pe-modules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 0 16px 20px;
+    }
+
+    .pe-module-card {
+      background: #132336;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 14px;
+      padding: 16px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .pe-module-card:hover {
+      border-color: rgba(212, 175, 55, 0.4);
+    }
+
+    .pe-module-icon {
+      font-size: 22px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .pe-module-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(245, 240, 232, 0.9);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    /* Barra de progresso individual de cada módulo */
+    .pe-module-prog {
+      height: 2px;
+      background: rgba(245, 240, 232, 0.07);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .pe-module-prog-fill {
+      height: 100%;
+      background: #D4AF37;
+      border-radius: 1px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — BADGES (conquistas)
+       Scroll horizontal, sem scrollbar visível.
+    ───────────────────────────────────────────────────────── */
+    .pe-badge-row {
+      display: flex;
+      gap: 10px;
+      margin: 0 16px 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .pe-badge {
+      flex-shrink: 0;
+      background: #132336;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 12px;
+      padding: 10px 14px;
+      text-align: center;
+      min-width: 72px;
+    }
+
+    .pe-badge-icon {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .pe-badge-label {
+      font-size: 11px;
+      color: rgba(245, 240, 232, 0.5);
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       DASHBOARD — DIVISOR E BARRA DE NAVEGAÇÃO INFERIOR
+    ───────────────────────────────────────────────────────── */
+    .pe-divider {
+      height: 1px;
+      background: rgba(245, 240, 232, 0.05);
+      margin: 4px 16px 16px;
+    }
+
+    .pe-nav {
+      position: sticky;
+      bottom: 0;
+      background: #0D1B2A;
+      border-top: 1px solid rgba(212, 175, 55, 0.12);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0 20px;     /* padding-bottom extra para safe area do iPhone */
+    }
+
+    .pe-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      opacity: 0.4;
+    }
+
+    .pe-nav-item.active { opacity: 1; }
+
+    .pe-nav-icon {
+      font-size: 22px;
+      color: #F5F0E8;
+    }
+
+    .pe-nav-label {
+      font-size: 10px;
+      color: rgba(245, 240, 232, 0.7);
+    }
+
+    .pe-nav-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+
+    .pe-nav-item.active .pe-nav-dot { background: #D4AF37; }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — TOPBAR
+    ───────────────────────────────────────────────────────── */
+    #screen-lesson { display: none; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 44px 20px 16px;  /* padding-top alto para status bar do iPhone */
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(245, 240, 232, 0.08);
+      border: none;
+      color: #F5F0E8;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .lmeta { text-align: center; }
+
+    .ltag {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+    .ltitle {
+      font-size: 15px;
+      font-weight: 500;
+      color: #F5F0E8;
+      margin-top: 2px;
+    }
+
+    .xpchip {
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — BARRA DE STEPS (pontinhos de progresso)
+    ───────────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      gap: 4px;
+      padding: 0 20px 16px;
+    }
+
+    .dot {
+      height: 3px;
+      border-radius: 2px;
+      flex: 1;
+      background: rgba(245, 240, 232, 0.12);
+      transition: background 0.3s;
+    }
+
+    .dot.done   { background: #D4AF37; }
+    .dot.active { background: rgba(212, 175, 55, 0.5); }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — BADGE DE VOZ NATIVA
+    ───────────────────────────────────────────────────────── */
+    .vbadge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(212, 175, 55, 0.07);
+      border: 1px solid rgba(212, 175, 55, 0.18);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: rgba(212, 175, 55, 0.8);
+      margin: 0 20px 16px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — CARD DO BRAD PITT (mensagem da frase)
+    ───────────────────────────────────────────────────────── */
+    .brad {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin: 0 16px 18px;
+      background: #1a2e42;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    .bav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #D4AF37;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .bname {
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #D4AF37;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .bmsg {
+      font-size: 14px;
+      color: rgba(245, 240, 232, 0.8);
+      line-height: 1.5;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — RÓTULO E CARD DA FRASE
+    ───────────────────────────────────────────────────────── */
+    .slabel {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(245, 240, 232, 0.3);
+      padding: 0 20px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #132336;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 18px;
+      padding: 22px 20px;
+      margin: 0 16px 12px;
+    }
+
+    /* Frase em inglês */
+    .pen {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: #F5F0E8;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    /* Tradução em português */
+    .ppt {
+      font-size: 14px;
+      color: rgba(245, 240, 232, 0.5);
+      font-weight: 300;
+      margin-bottom: 14px;
+    }
+
+    /* Pronúncia fonética simplificada */
+    .pph {
+      font-size: 13px;
+      color: #D4AF37;
+      background: rgba(212, 175, 55, 0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: monospace;
+      margin-bottom: 14px;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — BOTÃO DE ÁUDIO (TTS)
+    ───────────────────────────────────────────────────────── */
+    .abtn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 30px;
+      padding: 10px 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .abtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .aico {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #D4AF37;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .albl {
+      font-size: 13px;
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+    .asub {
+      font-size: 11px;
+      color: rgba(245, 240, 232, 0.4);
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — DICA DO BRAD
+    ───────────────────────────────────────────────────────── */
+    .tip {
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 0 16px 20px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tipico { font-size: 18px; flex-shrink: 0; }
+
+    .tiptxt {
+      font-size: 13px;
+      color: rgba(245, 240, 232, 0.65);
+      line-height: 1.5;
+    }
+
+    .tiptxt b {
+      color: #D4AF37;
+      font-weight: 500;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE AULA — BOTÕES DE NAVEGAÇÃO (anterior / próxima)
+    ───────────────────────────────────────────────────────── */
+    .navrow {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px 36px;
+    }
+
+    .bprev {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 240, 232, 0.15);
+      background: transparent;
+      color: rgba(245, 240, 232, 0.6);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+
+    .bnext {
+      flex: 2;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #D4AF37;
+      color: #0D1B2A;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       TELA DE RESULTADO (conclusão da aula)
+    ───────────────────────────────────────────────────────── */
+    #screen-result {
+      display: none;
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .rico  { font-size: 56px; margin-bottom: 20px; }
+
+    .rtitle {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .rsub {
+      font-size: 15px;
+      color: rgba(245, 240, 232, 0.55);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .xpbox {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .xpnum {
+      font-family: 'Playfair Display', serif;
+      font-size: 40px;
+      color: #D4AF37;
+    }
+
+    .xplbl {
+      font-size: 13px;
+      color: rgba(245, 240, 232, 0.5);
+      margin-top: 4px;
+    }
+
+    .rbtns {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .rbtn1 {
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: #D4AF37;
+      color: #0D1B2A;
+      font-size: 16px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+
+    .rbtn2 {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 240, 232, 0.2);
+      background: transparent;
+      color: rgba(245, 240, 232, 0.7);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       PRONÚNCIA — BOTÃO DE MICROFONE (STT)
+       Azul em repouso, vermelho pulsante ao ouvir.
+    ───────────────────────────────────────────────────────── */
+    .mic-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(100, 180, 255, 0.08);
+      border: 1px solid rgba(100, 180, 255, 0.3);
+      border-radius: 30px;
+      padding: 10px 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .mic-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Estado "ouvindo": fundo vermelho com animação de pulso */
+    .mic-btn.listening {
+      background: rgba(255, 80, 80, 0.12);
+      border-color: rgba(255, 80, 80, 0.5);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .mic-ico {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(100, 180, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .mic-btn.listening .mic-ico { background: rgba(255, 80, 80, 0.5); }
+
+    .mic-lbl {
+      font-size: 13px;
+      color: rgba(100, 180, 255, 0.9);
+      font-weight: 500;
+    }
+
+    .mic-btn.listening .mic-lbl { color: rgba(255, 100, 100, 0.9); }
+
+    .mic-sub {
+      font-size: 11px;
+      color: rgba(245, 240, 232, 0.4);
+    }
+
+
+    /* ─────────────────────────────────────────────────────────
+       PRONÚNCIA — PAINEL DE RESULTADO
+       Três estados: success (verde), partial (amarelo), fail (vermelho)
+    ───────────────────────────────────────────────────────── */
+    .pronunc-result {
+      margin: 0 16px 10px;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .pronunc-result.success {
+      background: rgba(50, 200, 100, 0.1);
+      border: 1px solid rgba(50, 200, 100, 0.3);
+    }
+
+    .pronunc-result.partial {
+      background: rgba(255, 200, 50, 0.1);
+      border: 1px solid rgba(255, 200, 50, 0.3);
+    }
+
+    .pronunc-result.fail {
+      background: rgba(255, 80, 80, 0.1);
+      border: 1px solid rgba(255, 80, 80, 0.3);
+    }
+
+    .pr-icon  { font-size: 22px; margin-bottom: 6px; }
+
+    .pr-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+
+    .pronunc-result.success .pr-title { color: #50c878; }
+    .pronunc-result.partial .pr-title { color: #ffc832; }
+    .pronunc-result.fail    .pr-title { color: #ff5050; }
+
+    .pr-heard { font-size: 12px; color: rgba(245, 240, 232, 0.5); margin-bottom: 2px; }
+    .pr-heard span { color: rgba(245, 240, 232, 0.8); }
+
+
+    /* ─────────────────────────────────────────────────────────
+       ANIMAÇÕES
+    ───────────────────────────────────────────────────────── */
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.3); }
+      50%       { box-shadow: 0 0 0 8px rgba(255, 80, 80, 0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
 
-<!-- DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════════
+     TELA 1: DASHBOARD (tela inicial)
+     Exibida por padrão. Oculta as demais via show().
+═══════════════════════════════════════════════════════════ -->
 <div id="screen-dashboard">
+
   <div class="pe-header">
     <div class="pe-greeting-small">Bem-vinda de volta</div>
     <div class="pe-greeting-name">Olá, Paty ✨</div>
@@ -143,6 +953,7 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
     </div>
   </div>
 
+  <!-- Brad sugere a lição do dia -->
   <div class="pe-brad-card" onclick="iniciarAula('hotel')">
     <div class="pe-brad-bubble">🎬</div>
     <div>
@@ -169,8 +980,13 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
       <span class="pe-progress-title">Nível: Iniciante</span>
       <span class="pe-progress-xp">120 XP</span>
     </div>
-    <div class="pe-progress-track"><div class="pe-progress-fill"></div></div>
-    <div class="pe-progress-labels"><span>Iniciante</span><span>Viajante Básico → 500 XP</span></div>
+    <div class="pe-progress-track">
+      <div class="pe-progress-fill"></div>
+    </div>
+    <div class="pe-progress-labels">
+      <span>Iniciante</span>
+      <span>Viajante Básico → 500 XP</span>
+    </div>
   </div>
 
   <div class="pe-divider"></div>
@@ -210,11 +1026,27 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
 
   <div class="pe-section-label">Suas conquistas</div>
   <div class="pe-badge-row">
-    <div class="pe-badge"><span class="pe-badge-icon">🥇</span><div class="pe-badge-label">Primeira lição</div></div>
-    <div class="pe-badge"><span class="pe-badge-icon">🎙️</span><div class="pe-badge-label">Primeira fala</div></div>
-    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">🔥</span><div class="pe-badge-label">7 dias</div></div>
-    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">✈️</span><div class="pe-badge-label">Aeroporto</div></div>
-    <div class="pe-badge" style="opacity:0.3"><span class="pe-badge-icon">🏆</span><div class="pe-badge-label">Viajante</div></div>
+    <div class="pe-badge">
+      <span class="pe-badge-icon">🥇</span>
+      <div class="pe-badge-label">Primeira lição</div>
+    </div>
+    <div class="pe-badge">
+      <span class="pe-badge-icon">🎙️</span>
+      <div class="pe-badge-label">Primeira fala</div>
+    </div>
+    <!-- Badges bloqueados ficam com opacity reduzida -->
+    <div class="pe-badge" style="opacity:0.3">
+      <span class="pe-badge-icon">🔥</span>
+      <div class="pe-badge-label">7 dias</div>
+    </div>
+    <div class="pe-badge" style="opacity:0.3">
+      <span class="pe-badge-icon">✈️</span>
+      <div class="pe-badge-label">Aeroporto</div>
+    </div>
+    <div class="pe-badge" style="opacity:0.3">
+      <span class="pe-badge-icon">🏆</span>
+      <div class="pe-badge-label">Viajante</div>
+    </div>
   </div>
 
   <div class="pe-nav">
@@ -239,10 +1071,16 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
       <div class="pe-nav-dot"></div>
     </div>
   </div>
-</div>
 
-<!-- AULA -->
+</div><!-- fim #screen-dashboard -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA 2: AULA
+     Conteúdo dinâmico — preenchido por mostrarFrase() via JS.
+═══════════════════════════════════════════════════════════ -->
 <div id="screen-lesson">
+
   <div class="topbar">
     <button class="back-btn" onclick="voltarDashboard()">←</button>
     <div class="lmeta">
@@ -251,8 +1089,13 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
     </div>
     <div class="xpchip">+50 XP</div>
   </div>
+
+  <!-- Barra de progresso da aula (dots gerados por buildSteps()) -->
   <div class="steps" id="stepsBar"></div>
+
   <div class="vbadge">🎙️ Voz nativa · Inglês americano</div>
+
+  <!-- Dica contextual do Brad para a frase atual -->
   <div class="brad">
     <div class="bav">🎬</div>
     <div>
@@ -260,11 +1103,16 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
       <div class="bmsg" id="bradMsg"></div>
     </div>
   </div>
+
   <div class="slabel" id="sLabel">Frase 1 de 5</div>
+
+  <!-- Card da frase: inglês, tradução, fonética, botões de áudio e mic -->
   <div class="card">
-    <div class="pen" id="phraseEn"></div>
-    <div class="ppt" id="phrasePt"></div>
-    <div class="pph" id="phrasePhon"></div>
+    <div class="pen"  id="phraseEn"></div>   <!-- frase em inglês -->
+    <div class="ppt"  id="phrasePt"></div>   <!-- tradução PT-BR -->
+    <div class="pph"  id="phrasePhon"></div> <!-- fonética simplificada -->
+
+    <!-- Botão TTS: chama tocarAudio() -->
     <button class="abtn" id="audioBtn" onclick="tocarAudio()">
       <div class="aico" id="audioIco">▶</div>
       <div>
@@ -272,6 +1120,8 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
         <div class="asub">Inglês americano</div>
       </div>
     </button>
+
+    <!-- Botão STT: chama testarPronuncia() -->
     <button class="mic-btn" id="micBtn" onclick="testarPronuncia()">
       <div class="mic-ico" id="micIco">🎤</div>
       <div>
@@ -280,22 +1130,31 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
       </div>
     </button>
   </div>
+
+  <!-- Painel de resultado da pronúncia (visível após reconhecimento) -->
   <div class="pronunc-result" id="pronunciResult">
-    <div class="pr-icon" id="prIcon"></div>
+    <div class="pr-icon"  id="prIcon"></div>
     <div class="pr-title" id="prTitle"></div>
     <div class="pr-heard">Entendi: <span id="prHeard"></span></div>
   </div>
+
+  <!-- Dica cultural / pedagógica do Brad -->
   <div class="tip">
     <div class="tipico">💡</div>
     <div class="tiptxt" id="tipTxt"></div>
   </div>
+
   <div class="navrow">
     <button class="bprev" id="btnPrev" onclick="anterior()">← Anterior</button>
     <button class="bnext" id="btnNext" onclick="proximo()">Próxima →</button>
   </div>
-</div>
 
-<!-- RESULTADO -->
+</div><!-- fim #screen-lesson -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA 3: RESULTADO (conclusão da aula)
+═══════════════════════════════════════════════════════════ -->
 <div id="screen-result">
   <div class="rico">🏆</div>
   <div class="rtitle">Aula concluída!</div>
@@ -308,104 +1167,381 @@ body{font-family:'DM Sans',sans-serif;background:#0D1B2A;color:#F5F0E8;max-width
     <button class="rbtn1" onclick="voltarDashboard()">Voltar ao início 🏠</button>
     <button class="rbtn2" onclick="repetirAula()">Repetir esta aula</button>
   </div>
-</div>
+</div><!-- fim #screen-result -->
+
 
 <script>
-let atual = 0;
-let moduloAtual = 'hotel';
-let synth = window.speechSynthesis;
-let vozSelecionada = null;
+// ═══════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// Todas as variáveis de estado ficam aqui, no topo do script,
+// para facilitar a leitura e evitar referências antes da declaração.
+// ═══════════════════════════════════════════════════════════════
+
+let atual       = 0;              // índice da frase atual na aula (0 a 4)
+let moduloAtual = 'hotel';        // chave do módulo em exibição
+
+// TTS (Text-to-Speech)
+let synth          = window.speechSynthesis;
+let vozSelecionada = null;        // voz en-US selecionada após carregamento
+
+// STT (Speech-to-Text)
+let recognition = null;           // instância ativa do SpeechRecognition
+let micAtivo    = false;          // true enquanto o reconhecimento estiver rodando
+
+
+// ═══════════════════════════════════════════════════════════════
+// INICIALIZAÇÃO DE VOZ (TTS — Web Speech API)
+//
+// Vozes são carregadas de forma assíncrona pelo browser.
+// onvoiceschanged garante que pegamos a lista completa.
+// carregarVoz() também é chamada defensivamente em tocarAudio()
+// para casos onde o evento disparou antes do listener ser registrado.
+//
+// Ordem de preferência:
+//   1. Vozes neurais iOS 16+ (Nicky, Ava Enhanced, Samantha Enhanced)
+//   2. Vozes de alta qualidade desktop (Google US English, Microsoft Natural)
+//   3. Vozes clássicas iOS/macOS (Aaron, Alex, Samantha)
+//   4. Fallback: qualquer voz local en-US → qualquer en-US → qualquer en
+//
+// NOTA: vozes com localService=true são processadas no dispositivo
+// e têm qualidade consistente. Vozes de rede dependem de conexão.
+// ═══════════════════════════════════════════════════════════════
 
 function carregarVoz() {
   const vozes = synth.getVoices();
-  const preferidas = ['Google US English','Microsoft Guy Online (Natural) - English (United States)','Microsoft David Desktop - English (United States)','Alex','Samantha'];
+  if (vozes.length === 0) return; // ainda não carregou — onvoiceschanged vai chamar de novo
+
+  // Lista em ordem de preferência de qualidade
+  const preferidas = [
+    // iOS 16+ — vozes neurais de alta qualidade
+    'Nicky',
+    'Ava (Enhanced)',
+    'Samantha (Enhanced)',
+    'Aaron',
+    'Zoe',
+    // Chrome desktop — voz neural via Google
+    'Google US English',
+    // Microsoft Edge / Windows — vozes naturais
+    'Microsoft Guy Online (Natural) - English (United States)',
+    'Microsoft Aria Online (Natural) - English (United States)',
+    'Microsoft David Desktop - English (United States)',
+    // macOS / iOS clássico
+    'Alex',
+    'Ava',
+    'Samantha',
+    'Karen',
+  ];
+
   for (const nome of preferidas) {
     const v = vozes.find(v => v.name === nome);
     if (v) { vozSelecionada = v; return; }
   }
-  vozSelecionada = vozes.find(v => v.lang === 'en-US') || vozes.find(v => v.lang.startsWith('en')) || null;
+
+  // Fallback 1: qualquer voz local (localService=true) em en-US — melhor qualidade offline
+  const localEnUS = vozes.find(v => v.lang === 'en-US' && v.localService);
+  if (localEnUS) { vozSelecionada = localEnUS; return; }
+
+  // Fallback 2: qualquer voz en-US
+  const enUS = vozes.find(v => v.lang === 'en-US');
+  if (enUS) { vozSelecionada = enUS; return; }
+
+  // Fallback 3: qualquer voz em inglês
+  vozSelecionada = vozes.find(v => v.lang.startsWith('en')) || null;
 }
+
 speechSynthesis.onvoiceschanged = carregarVoz;
-carregarVoz();
+carregarVoz(); // tentativa inicial (vozes podem já estar disponíveis)
+
+
+// ═══════════════════════════════════════════════════════════════
+// DADOS DOS MÓDULOS
+//
+// Cada módulo tem: tag (label do módulo), title (título da aula),
+// resultado (mensagem de conclusão) e frases[].
+//
+// Cada frase tem:
+//   en   — frase em inglês (texto para TTS e alvo do STT)
+//   pt   — tradução em português
+//   ph   — pronúncia fonética simplificada para exibição
+//   tip  — dica cultural/pedagógica do Brad (aceita HTML simples)
+//   brad — mensagem motivacional do Brad para aquela frase
+// ═══════════════════════════════════════════════════════════════
 
 const modulos = {
+
   aeroporto: {
     tag: 'Módulo 1 · Aeroporto',
     title: 'Aeroporto e Voos',
     resultado: 'Você aprendeu 5 frases essenciais para o aeroporto. Agora você já consegue se virar no check-in do voo!',
     frases: [
-      { en:"Where is the check-in counter?", pt:"Onde fica o balcão de check-in?", ph:"🔤  Uér iz de chék-in káunter?", tip:"<b>Dica do Brad:</b> Procure as telas com as companhias aéreas — geralmente têm o número do balcão exibido.", brad:"Esta é a primeira pergunta que você faz ao chegar no aeroporto. Simples e direta!" },
-      { en:"I'd like a window seat, please.", pt:"Eu gostaria de um assento na janela, por favor.", ph:"🔤  Aid láik e uíndo siit, plíz", tip:"<b>Dica do Brad:</b> Se preferir o corredor, diga \"aisle seat\" (áisel siit). Muito útil para voos longos!", brad:"Peça seu assento favorito — a maioria das companhias atende esse pedido no check-in!" },
-      { en:"Is my flight on time?", pt:"Meu voo está no horário?", ph:"🔤  Iz mai fláit on táim?", tip:"<b>Dica do Brad:</b> Você também pode verificar nos painéis do aeroporto — procure \"Departures\" para voos saindo.", brad:"Sempre boa ideia confirmar antes de relaxar no aeroporto. Atrasos acontecem!" },
-      { en:"Where is the boarding gate?", pt:"Onde fica o portão de embarque?", ph:"🔤  Uér iz de bórding guéit?", tip:"<b>Dica do Brad:</b> O portão (gate) fica no seu cartão de embarque. Mas se mudar, essa pergunta te salva!", brad:"Esta pergunta é muito importante — especialmente em aeroportos grandes como JFK ou LAX!" },
-      { en:"My luggage is lost.", pt:"Minha bagagem está perdida.", ph:"🔤  Mai láguidj iz lóst", tip:"<b>Dica do Brad:</b> Vá direto ao balcão \"Baggage Claim\" ou \"Lost & Found\" da sua companhia aérea.", brad:"Esperamos que você nunca precise usar esta frase — mas é bom estar preparada para qualquer situação!" }
+      {
+        en:   "Where is the check-in counter?",
+        pt:   "Onde fica o balcão de check-in?",
+        ph:   "🔤  Uér iz de chék-in káunter?",
+        tip:  "<b>Dica do Brad:</b> Procure as telas com as companhias aéreas — geralmente têm o número do balcão exibido.",
+        brad: "Esta é a primeira pergunta que você faz ao chegar no aeroporto. Simples e direta!"
+      },
+      {
+        en:   "I'd like a window seat, please.",
+        pt:   "Eu gostaria de um assento na janela, por favor.",
+        ph:   "🔤  Aid láik e uíndo siit, plíz",
+        tip:  "<b>Dica do Brad:</b> Se preferir o corredor, diga \"aisle seat\" (áisel siit). Muito útil para voos longos!",
+        brad: "Peça seu assento favorito — a maioria das companhias atende esse pedido no check-in!"
+      },
+      {
+        en:   "Is my flight on time?",
+        pt:   "Meu voo está no horário?",
+        ph:   "🔤  Iz mai fláit on táim?",
+        tip:  "<b>Dica do Brad:</b> Você também pode verificar nos painéis do aeroporto — procure \"Departures\" para voos saindo.",
+        brad: "Sempre boa ideia confirmar antes de relaxar no aeroporto. Atrasos acontecem!"
+      },
+      {
+        en:   "Where is the boarding gate?",
+        pt:   "Onde fica o portão de embarque?",
+        ph:   "🔤  Uér iz de bórding guéit?",
+        tip:  "<b>Dica do Brad:</b> O portão (gate) fica no seu cartão de embarque. Mas se mudar, essa pergunta te salva!",
+        brad: "Esta pergunta é muito importante — especialmente em aeroportos grandes como JFK ou LAX!"
+      },
+      {
+        en:   "My luggage is lost.",
+        pt:   "Minha bagagem está perdida.",
+        ph:   "🔤  Mai láguidj iz lóst",
+        tip:  "<b>Dica do Brad:</b> Vá direto ao balcão \"Baggage Claim\" ou \"Lost & Found\" da sua companhia aérea.",
+        brad: "Esperamos que você nunca precise usar esta frase — mas é bom estar preparada para qualquer situação!"
+      }
     ]
   },
+
   aduana: {
     tag: 'Módulo 2 · Aduana EUA',
     title: 'Entrada nos EUA',
     resultado: 'Parabéns! Agora você está preparada para passar pela aduana americana com confiança!',
     frases: [
-      { en:"I am here on vacation.", pt:"Estou aqui de férias.", ph:"🔤  Ai em híer on vekéishan", tip:"<b>Dica do Brad:</b> Se for turismo, diga \"vacation\" ou \"tourism\". Se for visitar família, diga \"visiting family\".", brad:"Esta é a resposta mais comum para a pergunta \"What is the purpose of your visit?\"" },
-      { en:"I will stay for ten days.", pt:"Vou ficar por dez dias.", ph:"🔤  Ai uíl stéi for ten déis", tip:"<b>Dica do Brad:</b> Tenha o endereço do seu hotel à mão — o agente pode pedir. Ex: \"I'm staying at the Marriott in Miami.\"", brad:"O agente sempre pergunta quanto tempo você vai ficar. Seja específica e tranquila ao responder!" },
-      { en:"I am staying at a hotel.", pt:"Estou hospedada em um hotel.", ph:"🔤  Ai em stéing et e hotél", tip:"<b>Dica do Brad:</b> Tenha o nome e endereço do hotel anotados. O agente pode pedir para confirmar.", brad:"Tenha as informações do hotel no celular ou anotadas — facilita muito na aduana!" },
-      { en:"I have nothing to declare.", pt:"Não tenho nada a declarar.", ph:"🔤  Ai ráv náting tu diklér", tip:"<b>Dica do Brad:</b> Se trouxer mais de US$10.000 em dinheiro ou alimentos, você precisa declarar. Caso contrário, essa frase resolve!", brad:"A frase mágica da aduana! Dita com calma e segurança, passa tranquilamente." },
-      { en:"Here is my passport.", pt:"Aqui está meu passaporte.", ph:"🔤  Híer iz mai pásport", tip:"<b>Dica do Brad:</b> Tenha o passaporte e o formulário de entrada já preenchido na mão antes de chegar ao agente.", brad:"Simples e direta — entregue o passaporte com um sorriso. Educação sempre ajuda!" }
+      {
+        en:   "I am here on vacation.",
+        pt:   "Estou aqui de férias.",
+        ph:   "🔤  Ai em híer on vekéishan",
+        tip:  "<b>Dica do Brad:</b> Se for turismo, diga \"vacation\" ou \"tourism\". Se for visitar família, diga \"visiting family\".",
+        brad: "Esta é a resposta mais comum para a pergunta \"What is the purpose of your visit?\""
+      },
+      {
+        en:   "I will stay for ten days.",
+        pt:   "Vou ficar por dez dias.",
+        ph:   "🔤  Ai uíl stéi for ten déis",
+        tip:  "<b>Dica do Brad:</b> Tenha o endereço do seu hotel à mão — o agente pode pedir. Ex: \"I'm staying at the Marriott in Miami.\"",
+        brad: "O agente sempre pergunta quanto tempo você vai ficar. Seja específica e tranquila ao responder!"
+      },
+      {
+        en:   "I am staying at a hotel.",
+        pt:   "Estou hospedada em um hotel.",
+        ph:   "🔤  Ai em stéing et e hotél",
+        tip:  "<b>Dica do Brad:</b> Tenha o nome e endereço do hotel anotados. O agente pode pedir para confirmar.",
+        brad: "Tenha as informações do hotel no celular ou anotadas — facilita muito na aduana!"
+      },
+      {
+        en:   "I have nothing to declare.",
+        pt:   "Não tenho nada a declarar.",
+        ph:   "🔤  Ai ráv náting tu diklér",
+        tip:  "<b>Dica do Brad:</b> Se trouxer mais de US$10.000 em dinheiro ou alimentos, você precisa declarar. Caso contrário, essa frase resolve!",
+        brad: "A frase mágica da aduana! Dita com calma e segurança, passa tranquilamente."
+      },
+      {
+        en:   "Here is my passport.",
+        pt:   "Aqui está meu passaporte.",
+        ph:   "🔤  Híer iz mai pásport",
+        tip:  "<b>Dica do Brad:</b> Tenha o passaporte e o formulário de entrada já preenchido na mão antes de chegar ao agente.",
+        brad: "Simples e direta — entregue o passaporte com um sorriso. Educação sempre ajuda!"
+      }
     ]
   },
+
   hotel: {
     tag: 'Módulo 3 · Hotel',
     title: 'Check-in no hotel',
     resultado: 'Você aprendeu 5 frases essenciais para o check-in. O Brad está muito orgulhoso de você!',
     frases: [
-      { en:"I have a reservation.", pt:"Eu tenho uma reserva.", ph:"🔤  Ai ráv e rézervêishan", tip:"<b>Dica do Brad:</b> Sempre diga seu sobrenome logo depois — ex: \"I have a reservation, Silva.\" Fica muito natural!", brad:"Esta é a primeira frase que você diz na recepção. Curta e direta — o recepcionista vai entender na hora! 😊" },
-      { en:"My name is Paty Silva.", pt:"Meu nome é Paty Silva.", ph:"🔤  Mai néim iz Paty Silva", tip:"<b>Dica do Brad:</b> Fale devagar e claramente. Se não entenderem, soletre: P-A-T-Y.", brad:"Confirme seu nome logo depois da reserva. Simples assim — e você já está no controle da situação!" },
-      { en:"I'd like a non-smoking room, please.", pt:"Eu gostaria de um quarto para não fumantes.", ph:"🔤  Aid láik e non-smóukin ruum, plíz", tip:"<b>Dica do Brad:</b> \"I'd like\" é muito mais elegante que \"I want\". Use sempre em hotéis e restaurantes!", brad:"Quer um quarto melhor? Peça! Os hotéis adoram atender pedidos razoáveis." },
-      { en:"What time is check-out?", pt:"A que horas é o check-out?", ph:"🔤  Uót taim iz chék-áut?", tip:"<b>Dica do Brad:</b> Normalmente às 11h ou 12h. Se precisar ficar mais, pergunte: \"Can I have a late check-out?\"", brad:"Esta pergunta salva você de surpresas! Pergunte logo no check-in." },
-      { en:"Can I have the WiFi password, please?", pt:"Posso ter a senha do WiFi, por favor?", ph:"🔤  Ken Ai ráv de uái-fái pássuord, plíz?", tip:"<b>Dica do Brad:</b> Muitos hotéis mostram a senha automaticamente, mas saber pedir é sempre útil!", brad:"A frase mais usada no mundo moderno! 😄 Você chegou até o fim — estou muito orgulhoso de você!" }
+      {
+        en:   "I have a reservation.",
+        pt:   "Eu tenho uma reserva.",
+        ph:   "🔤  Ai ráv e rézervêishan",
+        tip:  "<b>Dica do Brad:</b> Sempre diga seu sobrenome logo depois — ex: \"I have a reservation, Silva.\" Fica muito natural!",
+        brad: "Esta é a primeira frase que você diz na recepção. Curta e direta — o recepcionista vai entender na hora! 😊"
+      },
+      {
+        en:   "My name is Paty Silva.",
+        pt:   "Meu nome é Paty Silva.",
+        ph:   "🔤  Mai néim iz Paty Silva",
+        tip:  "<b>Dica do Brad:</b> Fale devagar e claramente. Se não entenderem, soletre: P-A-T-Y.",
+        brad: "Confirme seu nome logo depois da reserva. Simples assim — e você já está no controle da situação!"
+      },
+      {
+        en:   "I'd like a non-smoking room, please.",
+        pt:   "Eu gostaria de um quarto para não fumantes.",
+        ph:   "🔤  Aid láik e non-smóukin ruum, plíz",
+        tip:  "<b>Dica do Brad:</b> \"I'd like\" é muito mais elegante que \"I want\". Use sempre em hotéis e restaurantes!",
+        brad: "Quer um quarto melhor? Peça! Os hotéis adoram atender pedidos razoáveis."
+      },
+      {
+        en:   "What time is check-out?",
+        pt:   "A que horas é o check-out?",
+        ph:   "🔤  Uót taim iz chék-áut?",
+        tip:  "<b>Dica do Brad:</b> Normalmente às 11h ou 12h. Se precisar ficar mais, pergunte: \"Can I have a late check-out?\"",
+        brad: "Esta pergunta salva você de surpresas! Pergunte logo no check-in."
+      },
+      {
+        en:   "Can I have the WiFi password, please?",
+        pt:   "Posso ter a senha do WiFi, por favor?",
+        ph:   "🔤  Ken Ai ráv de uái-fái pássuord, plíz?",
+        tip:  "<b>Dica do Brad:</b> Muitos hotéis mostram a senha automaticamente, mas saber pedir é sempre útil!",
+        brad: "A frase mais usada no mundo moderno! 😄 Você chegou até o fim — estou muito orgulhoso de você!"
+      }
     ]
   },
+
   restaurante: {
     tag: 'Módulo 4 · Restaurante',
     title: 'No restaurante',
     resultado: 'Agora você consegue pedir sua comida em inglês com confiança. Bom apetite! 🍽️',
     frases: [
-      { en:"A table for two, please.", pt:"Uma mesa para dois, por favor.", ph:"🔤  E téibel for tuu, plíz", tip:"<b>Dica do Brad:</b> Nos EUA é comum esperar para ser sentado — não sente em qualquer mesa sem ser guiado!", brad:"A primeira frase ao entrar no restaurante. Educada e direta — funciona sempre!" },
-      { en:"Can I see the menu, please?", pt:"Posso ver o cardápio, por favor?", ph:"🔤  Ken Ai síi de méniu, plíz?", tip:"<b>Dica do Brad:</b> Nos EUA chamam de \"menu\" mesmo. Pode pedir também pelo tablet em muitos restaurantes modernos.", brad:"Simples e eficiente — o garçom vai trazer o cardápio imediatamente!" },
-      { en:"I'd like the grilled chicken, please.", pt:"Eu gostaria do frango grelhado, por favor.", ph:"🔤  Aid láik de gríld tchíken, plíz", tip:"<b>Dica do Brad:</b> Substitua \"grilled chicken\" pelo prato que quiser. \"Grilled\" = grelhado, \"fried\" = frito, \"baked\" = assado.", brad:"Use \"I'd like\" para pedir qualquer coisa no menu. Elegante e educado!" },
-      { en:"I am allergic to nuts.", pt:"Sou alérgica a nozes.", ph:"🔤  Ai em alérdjik tu náts", tip:"<b>Dica do Brad:</b> Substitua \"nuts\" pelo seu alérgeno: \"shellfish\" (frutos do mar), \"dairy\" (laticínios), \"gluten\" (glúten).", brad:"Sempre importante informar alergias. Os restaurantes americanos levam isso muito a sério!" },
-      { en:"Can I have the check, please?", pt:"Pode trazer a conta, por favor?", ph:"🔤  Ken Ai ráv de chék, plíz?", tip:"<b>Dica do Brad:</b> Nos EUA o garçom não traz a conta automaticamente — você precisa pedir! E a gorjeta é de 15% a 20%.", brad:"Nos EUA você sempre precisa pedir a conta. Esta frase é essencial para fechar qualquer refeição!" }
+      {
+        en:   "A table for two, please.",
+        pt:   "Uma mesa para dois, por favor.",
+        ph:   "🔤  E téibel for tuu, plíz",
+        tip:  "<b>Dica do Brad:</b> Nos EUA é comum esperar para ser sentado — não sente em qualquer mesa sem ser guiado!",
+        brad: "A primeira frase ao entrar no restaurante. Educada e direta — funciona sempre!"
+      },
+      {
+        en:   "Can I see the menu, please?",
+        pt:   "Posso ver o cardápio, por favor?",
+        ph:   "🔤  Ken Ai síi de méniu, plíz?",
+        tip:  "<b>Dica do Brad:</b> Nos EUA chamam de \"menu\" mesmo. Pode pedir também pelo tablet em muitos restaurantes modernos.",
+        brad: "Simples e eficiente — o garçom vai trazer o cardápio imediatamente!"
+      },
+      {
+        en:   "I'd like the grilled chicken, please.",
+        pt:   "Eu gostaria do frango grelhado, por favor.",
+        ph:   "🔤  Aid láik de gríld tchíken, plíz",
+        tip:  "<b>Dica do Brad:</b> Substitua \"grilled chicken\" pelo prato que quiser. \"Grilled\" = grelhado, \"fried\" = frito, \"baked\" = assado.",
+        brad: "Use \"I'd like\" para pedir qualquer coisa no menu. Elegante e educado!"
+      },
+      {
+        en:   "I am allergic to nuts.",
+        pt:   "Sou alérgica a nozes.",
+        ph:   "🔤  Ai em alérdjik tu náts",
+        tip:  "<b>Dica do Brad:</b> Substitua \"nuts\" pelo seu alérgeno: \"shellfish\" (frutos do mar), \"dairy\" (laticínios), \"gluten\" (glúten).",
+        brad: "Sempre importante informar alergias. Os restaurantes americanos levam isso muito a sério!"
+      },
+      {
+        en:   "Can I have the check, please?",
+        pt:   "Pode trazer a conta, por favor?",
+        ph:   "🔤  Ken Ai ráv de chék, plíz?",
+        tip:  "<b>Dica do Brad:</b> Nos EUA o garçom não traz a conta automaticamente — você precisa pedir! E a gorjeta é de 15% a 20%.",
+        brad: "Nos EUA você sempre precisa pedir a conta. Esta frase é essencial para fechar qualquer refeição!"
+      }
     ]
   },
+
   taxi: {
     tag: 'Módulo 5 · Transporte',
     title: 'Táxi e Transporte',
     resultado: 'Agora você consegue se deslocar pelos EUA com confiança! 🚕',
     frases: [
-      { en:"Can you take me to this address?", pt:"Você pode me levar a este endereço?", ph:"🔤  Ken iuu téik mii tu dis ádrés?", tip:"<b>Dica do Brad:</b> Mostre o endereço no celular! \"Can you take me here?\" apontando para a tela funciona muito bem.", brad:"A frase mais útil no táxi. Mostre o endereço no celular junto — garante que não haverá confusão!" },
-      { en:"How much will it cost?", pt:"Quanto vai custar?", ph:"🔤  Rau mátch uíl it kóst?", tip:"<b>Dica do Brad:</b> Uber e Lyft mostram o preço antes de confirmar. Para táxi tradicional, sempre pergunte antes de entrar!", brad:"Sempre bom saber o preço antes! Evita surpresas na hora de pagar." },
-      { en:"Please go straight ahead.", pt:"Por favor, siga em frente.", ph:"🔤  Plíz gou stréit ahéd", tip:"<b>Dica do Brad:</b> \"Turn left\" = vire à esquerda, \"Turn right\" = vire à direita. Útil se você estiver acompanhando o GPS!", brad:"Se você conhece o caminho, pode guiar o motorista. Impressiona muito falar isso em inglês!" },
-      { en:"Can you stop here, please?", pt:"Pode parar aqui, por favor?", ph:"🔤  Ken iuu stóp híer, plíz?", tip:"<b>Dica do Brad:</b> Diga com antecedência para o motorista ter tempo de parar com segurança.", brad:"Direta e educada — o motorista vai parar imediatamente. O \"please\" faz toda a diferença!" },
-      { en:"Keep the change.", pt:"Fique com o troco.", ph:"🔤  Kíip de tchéindj", tip:"<b>Dica do Brad:</b> Uma frase elegante para dar gorjeta. Nos EUA é costume dar 15% a 20% de gorjeta no táxi.", brad:"Uma das frases mais charmosas em inglês — e os motoristas adoram ouvir! 😄" }
+      {
+        en:   "Can you take me to this address?",
+        pt:   "Você pode me levar a este endereço?",
+        ph:   "🔤  Ken iuu téik mii tu dis ádrés?",
+        tip:  "<b>Dica do Brad:</b> Mostre o endereço no celular! \"Can you take me here?\" apontando para a tela funciona muito bem.",
+        brad: "A frase mais útil no táxi. Mostre o endereço no celular junto — garante que não haverá confusão!"
+      },
+      {
+        en:   "How much will it cost?",
+        pt:   "Quanto vai custar?",
+        ph:   "🔤  Rau mátch uíl it kóst?",
+        tip:  "<b>Dica do Brad:</b> Uber e Lyft mostram o preço antes de confirmar. Para táxi tradicional, sempre pergunte antes de entrar!",
+        brad: "Sempre bom saber o preço antes! Evita surpresas na hora de pagar."
+      },
+      {
+        en:   "Please go straight ahead.",
+        pt:   "Por favor, siga em frente.",
+        ph:   "🔤  Plíz gou stréit ahéd",
+        tip:  "<b>Dica do Brad:</b> \"Turn left\" = vire à esquerda, \"Turn right\" = vire à direita. Útil se você estiver acompanhando o GPS!",
+        brad: "Se você conhece o caminho, pode guiar o motorista. Impressiona muito falar isso em inglês!"
+      },
+      {
+        en:   "Can you stop here, please?",
+        pt:   "Pode parar aqui, por favor?",
+        ph:   "🔤  Ken iuu stóp híer, plíz?",
+        tip:  "<b>Dica do Brad:</b> Diga com antecedência para o motorista ter tempo de parar com segurança.",
+        brad: "Direta e educada — o motorista vai parar imediatamente. O \"please\" faz toda a diferença!"
+      },
+      {
+        en:   "Keep the change.",
+        pt:   "Fique com o troco.",
+        ph:   "🔤  Kíip de tchéindj",
+        tip:  "<b>Dica do Brad:</b> Uma frase elegante para dar gorjeta. Nos EUA é costume dar 15% a 20% de gorjeta no táxi.",
+        brad: "Uma das frases mais charmosas em inglês — e os motoristas adoram ouvir! 😄"
+      }
     ]
   },
+
   compras: {
     tag: 'Módulo 6 · Compras',
     title: 'Compras e Lojas',
     resultado: 'Agora você está pronta para fazer compras nos EUA com total confiança! 🛍️',
     frases: [
-      { en:"I'm just looking, thank you.", pt:"Estou só olhando, obrigada.", ph:"🔤  Aim djást lúking, thénk iuu", tip:"<b>Dica do Brad:</b> Nos EUA os vendedores abordam logo. Esta frase educada dispensa ajuda sem ser grossa.", brad:"A frase perfeita quando você quer navegar pela loja sem ser perturbada. Funciona sempre!" },
-      { en:"Do you have this in a larger size?", pt:"Vocês têm isso em um tamanho maior?", ph:"🔤  Du iuu ráv dis in e lárjer sáiz?", tip:"<b>Dica do Brad:</b> \"Larger\" = maior, \"Smaller\" = menor. Tamanhos nos EUA: XS, S, M, L, XL, XXL.", brad:"Essencial para roupas! Os tamanhos americanos são diferentes dos brasileiros — sempre experimente!" },
-      { en:"How much does this cost?", pt:"Quanto custa isso?", ph:"🔤  Rau mátch dáz dis kóst?", tip:"<b>Dica do Brad:</b> Nos EUA o preço na etiqueta não inclui o imposto (tax) — o total será um pouco maior no caixa.", brad:"A pergunta mais básica de compras! Simples e funciona em qualquer loja." },
-      { en:"Can I try this on?", pt:"Posso experimentar isso?", ph:"🔤  Ken Ai trái dis on?", tip:"<b>Dica do Brad:</b> Fitting rooms = provadores. Geralmente pedem para contar as peças antes de entrar.", brad:"Sempre experimente antes de comprar! Esta frase te dá acesso ao provador sem complicação." },
-      { en:"I'll pay by credit card.", pt:"Vou pagar com cartão de crédito.", ph:"🔤  Áil péi bai krédit kard", tip:"<b>Dica do Brad:</b> Nos EUA pode pedir para assinar ou colocar o PIN. Cartões internacionais são aceitos em quase todo lugar!", brad:"A frase final de qualquer compra bem-sucedida! Cartão de crédito é aceito em praticamente todo lugar nos EUA." }
+      {
+        en:   "I'm just looking, thank you.",
+        pt:   "Estou só olhando, obrigada.",
+        ph:   "🔤  Aim djást lúking, thénk iuu",
+        tip:  "<b>Dica do Brad:</b> Nos EUA os vendedores abordam logo. Esta frase educada dispensa ajuda sem ser grossa.",
+        brad: "A frase perfeita quando você quer navegar pela loja sem ser perturbada. Funciona sempre!"
+      },
+      {
+        en:   "Do you have this in a larger size?",
+        pt:   "Vocês têm isso em um tamanho maior?",
+        ph:   "🔤  Du iuu ráv dis in e lárjer sáiz?",
+        tip:  "<b>Dica do Brad:</b> \"Larger\" = maior, \"Smaller\" = menor. Tamanhos nos EUA: XS, S, M, L, XL, XXL.",
+        brad: "Essencial para roupas! Os tamanhos americanos são diferentes dos brasileiros — sempre experimente!"
+      },
+      {
+        en:   "How much does this cost?",
+        pt:   "Quanto custa isso?",
+        ph:   "🔤  Rau mátch dáz dis kóst?",
+        tip:  "<b>Dica do Brad:</b> Nos EUA o preço na etiqueta não inclui o imposto (tax) — o total será um pouco maior no caixa.",
+        brad: "A pergunta mais básica de compras! Simples e funciona em qualquer loja."
+      },
+      {
+        en:   "Can I try this on?",
+        pt:   "Posso experimentar isso?",
+        ph:   "🔤  Ken Ai trái dis on?",
+        tip:  "<b>Dica do Brad:</b> Fitting rooms = provadores. Geralmente pedem para contar as peças antes de entrar.",
+        brad: "Sempre experimente antes de comprar! Esta frase te dá acesso ao provador sem complicação."
+      },
+      {
+        en:   "I'll pay by credit card.",
+        pt:   "Vou pagar com cartão de crédito.",
+        ph:   "🔤  Áil péi bai krédit kard",
+        tip:  "<b>Dica do Brad:</b> Nos EUA pode pedir para assinar ou colocar o PIN. Cartões internacionais são aceitos em quase todo lugar!",
+        brad: "A frase final de qualquer compra bem-sucedida! Cartão de crédito é aceito em praticamente todo lugar nos EUA."
+      }
     ]
   }
-};
+
+}; // fim: modulos
+
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO ENTRE TELAS
+//
+// show(id) exibe uma tela e oculta as demais.
+// As três telas possíveis: screen-dashboard, screen-lesson, screen-result.
+// ═══════════════════════════════════════════════════════════════
+
+const TELAS = ['screen-dashboard', 'screen-lesson', 'screen-result'];
 
 function show(id) {
-  ['screen-dashboard','screen-lesson','screen-result'].forEach(s => {
-    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  TELAS.forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
   });
 }
 
@@ -413,7 +1549,7 @@ function iniciarAula(modulo) {
   moduloAtual = modulo;
   atual = 0;
   const m = modulos[modulo];
-  document.getElementById('lessonTag').textContent = m.tag;
+  document.getElementById('lessonTag').textContent   = m.tag;
   document.getElementById('lessonTitle').textContent = m.title;
   show('screen-lesson');
   mostrarFrase(0);
@@ -428,43 +1564,100 @@ function repetirAula() {
   iniciarAula(moduloAtual);
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// LÓGICA DE AULA — frases e barra de progresso (steps)
+// ═══════════════════════════════════════════════════════════════
+
+/** Gera os dots de progresso da aula na #stepsBar. */
 function buildSteps() {
-  const bar = document.getElementById('stepsBar');
+  const bar    = document.getElementById('stepsBar');
   const frases = modulos[moduloAtual].frases;
   bar.innerHTML = '';
   frases.forEach((_, i) => {
     const d = document.createElement('div');
-    d.className = 'dot' + (i < atual ? ' done' : i === atual ? ' active' : '');
+    d.className = 'dot'
+      + (i < atual   ? ' done'   : '')
+      + (i === atual ? ' active' : '');
     bar.appendChild(d);
   });
 }
 
+/** Preenche o card com os dados da frase de índice i e atualiza a UI. */
 function mostrarFrase(i) {
   const frases = modulos[moduloAtual].frases;
   const f = frases[i];
-  document.getElementById('phraseEn').textContent = f.en;
-  document.getElementById('phrasePt').textContent = f.pt;
-  document.getElementById('phrasePhon').textContent = f.ph;
-  document.getElementById('tipTxt').innerHTML = f.tip;
-  document.getElementById('bradMsg').textContent = f.brad;
-  document.getElementById('sLabel').textContent = 'Frase ' + (i+1) + ' de ' + frases.length;
-  document.getElementById('btnPrev').style.display = i === 0 ? 'none' : '';
-  document.getElementById('btnNext').textContent = i === frases.length-1 ? 'Concluir aula ✓' : 'Próxima →';
+
+  document.getElementById('phraseEn').textContent    = f.en;
+  document.getElementById('phrasePt').textContent    = f.pt;
+  document.getElementById('phrasePhon').textContent  = f.ph;
+  document.getElementById('tipTxt').innerHTML        = f.tip;
+  document.getElementById('bradMsg').textContent     = f.brad;
+  document.getElementById('sLabel').textContent      = `Frase ${i + 1} de ${frases.length}`;
+
+  // Oculta botão "Anterior" na primeira frase
+  document.getElementById('btnPrev').style.display = (i === 0) ? 'none' : '';
+
+  // Muda o texto do botão "Próxima" na última frase
+  document.getElementById('btnNext').textContent =
+    (i === frases.length - 1) ? 'Concluir aula ✓' : 'Próxima →';
+
   resetAudio();
   buildSteps();
 }
 
+function proximo() {
+  resetAudio();
+  const frases = modulos[moduloAtual].frases;
+  if (atual < frases.length - 1) {
+    atual++;
+    mostrarFrase(atual);
+  } else {
+    // Última frase concluída → tela de resultado
+    document.getElementById('resultMsg').textContent = modulos[moduloAtual].resultado;
+    show('screen-result');
+  }
+}
+
+function anterior() {
+  resetAudio();
+  if (atual > 0) {
+    atual--;
+    mostrarFrase(atual);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ÁUDIO — TTS via Web Speech API
+//
+// NOTA ARQUITETURAL: ElevenLabs foi descartado por bloqueio de CORS
+// ao chamar a API diretamente do browser. A solução identificada é
+// um proxy serverless Vercel (/api/tts.js) com a chave em variável
+// de ambiente. Não implementar fetch direto ao ElevenLabs.
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Reseta o estado de áudio E de microfone.
+ * Os dois são resetados juntos porque navegar para outra frase
+ * ou voltar ao dashboard deve cancelar qualquer operação ativa.
+ */
 function resetAudio() {
+  // — TTS —
   if (synth.speaking) synth.cancel();
   const ico = document.getElementById('audioIco');
   if (!ico) return;
-  ico.textContent = '▶';
-  ico.style.background = '#D4AF37';
+  ico.textContent          = '▶';
+  ico.style.background     = '#D4AF37';
   document.getElementById('audioLbl').textContent = 'Ouvir voz nativa';
-  document.getElementById('audioBtn').disabled = false;
-  // Reset mic state too
+  document.getElementById('audioBtn').disabled    = false;
+
+  // — STT (resetado aqui para garantir estado limpo ao trocar de frase) —
   micAtivo = false;
-  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  if (recognition) {
+    try { recognition.stop(); } catch (e) { /* ignora erros ao parar */ }
+    recognition = null;
+  }
   const micBtn = document.getElementById('micBtn');
   if (micBtn) {
     micBtn.classList.remove('listening');
@@ -476,168 +1669,165 @@ function resetAudio() {
   if (resultEl) resultEl.style.display = 'none';
 }
 
+/** Toca (ou pausa) o áudio da frase atual via Web Speech API. */
 function tocarAudio() {
   const ico = document.getElementById('audioIco');
   const lbl = document.getElementById('audioLbl');
+
+  // Se já está tocando, cancela (toggle)
   if (synth.speaking) {
     synth.cancel();
-    ico.textContent = '▶';
+    ico.textContent      = '▶';
     ico.style.background = '#D4AF37';
-    lbl.textContent = 'Ouvir voz nativa';
+    lbl.textContent      = 'Ouvir voz nativa';
     return;
   }
-  carregarVoz();
+
+  carregarVoz(); // chamada defensiva caso onvoiceschanged tenha sido assíncrono
+
   const frases = modulos[moduloAtual].frases;
   const utt = new SpeechSynthesisUtterance(frases[atual].en);
-  utt.lang = 'en-US';
-  utt.rate = 0.82;
-  utt.pitch = 0.95;
+  utt.lang   = 'en-US';
+  utt.rate   = 0.82;   // ligeiramente mais lento que o natural para facilitar a escuta
+  utt.pitch  = 0.95;
   utt.volume = 1;
   if (vozSelecionada) utt.voice = vozSelecionada;
-  ico.textContent = '⏸';
+
+  utt.onend  = () => {
+    ico.textContent      = '▶';
+    ico.style.background = '#D4AF37';
+    lbl.textContent      = 'Ouvir novamente';
+  };
+  utt.onerror = () => {
+    ico.textContent      = '⚠️';
+    ico.style.background = '#8B0000';
+    lbl.textContent      = 'Erro de áudio';
+  };
+
+  ico.textContent      = '⏸';
   ico.style.background = '#b8962e';
-  lbl.textContent = 'Reproduzindo...';
-  utt.onend = () => { ico.textContent = '▶'; ico.style.background = '#D4AF37'; lbl.textContent = 'Ouvir novamente'; };
-  utt.onerror = () => { ico.textContent = '⚠️'; ico.style.background = '#8B0000'; lbl.textContent = 'Erro de áudio'; };
+  lbl.textContent      = 'Reproduzindo...';
+
   synth.speak(utt);
 }
 
-function proximo() {
-  resetAudio();
-  const frases = modulos[moduloAtual].frases;
-  if (atual < frases.length-1) { atual++; mostrarFrase(atual); }
-  else {
-    document.getElementById('resultMsg').textContent = modulos[moduloAtual].resultado;
-    show('screen-result');
-  }
-}
 
-function anterior() {
-  resetAudio();
-  if (atual > 0) { atual--; mostrarFrase(atual); }
-}
+// ═══════════════════════════════════════════════════════════════
+// PRONÚNCIA — STT via Web Speech API
+//
+// Thresholds de qualidade (não alterar sem revisão pedagógica):
+//   ≥ 85% → "Excelente" (success)
+//   ≥ 50% → "Quase lá"  (partial)
+//   < 50% → "Tente novamente" (fail)
+//
+// Algoritmo: sobreposição de palavras (word-overlap) após
+// normalização (minúsculas, remoção de pontuação).
+// ═══════════════════════════════════════════════════════════════
 
-show('screen-dashboard');
-
-// ─── PRONÚNCIA ───────────────────────────────────────────────
-let recognition = null;
-let micAtivo = false;
-
+/** Cria e configura uma instância do SpeechRecognition. */
 function initRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
   const r = new SR();
-  r.lang = 'en-US';
-  r.continuous = false;
-  r.interimResults = false;
+  r.lang            = 'en-US';
+  r.continuous      = false;
+  r.interimResults  = false;
   r.maxAlternatives = 3;
   return r;
 }
 
+/**
+ * Calcula similaridade entre o que foi ouvido (a) e o alvo (b).
+ * Retorna valor entre 0 e 1.
+ */
 function similaridade(a, b) {
-  // Normaliza: minúsculas, remove pontuação
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
   const na = norm(a), nb = norm(b);
   if (na === nb) return 1.0;
-  // Calcula palavras em comum
-  const wa = na.split(/\s+/), wb = nb.split(/\s+/);
+  const wa = na.split(/\s+/);
+  const wb = nb.split(/\s+/);
   const comuns = wa.filter(w => wb.includes(w)).length;
   return comuns / Math.max(wa.length, wb.length);
 }
 
+/** Exibe o painel de resultado com base no score de similaridade. */
 function mostrarResultadoPronuncia(heard, target) {
-  const score = similaridade(heard, target);
-  const el = document.getElementById('pronunciResult');
-  const icon = document.getElementById('prIcon');
-  const title = document.getElementById('prTitle');
+  const score   = similaridade(heard, target);
+  const el      = document.getElementById('pronunciResult');
+  const icon    = document.getElementById('prIcon');
+  const title   = document.getElementById('prTitle');
   const heardEl = document.getElementById('prHeard');
-  
-  el.className = 'pronunc-result';
+
+  el.className        = 'pronunc-result'; // remove classes de estado anterior
   heardEl.textContent = heard || '(não entendi)';
-  
+
   if (score >= 0.85) {
     el.classList.add('success');
-    icon.textContent = '✅';
+    icon.textContent  = '✅';
     title.textContent = 'Excelente! Pronúncia perfeita!';
   } else if (score >= 0.5) {
     el.classList.add('partial');
-    icon.textContent = '⚠️';
+    icon.textContent  = '⚠️';
     title.textContent = 'Quase lá! Continue praticando.';
   } else {
     el.classList.add('fail');
-    icon.textContent = '🔄';
+    icon.textContent  = '🔄';
     title.textContent = 'Tente novamente — ouça e repita!';
   }
   el.style.display = 'block';
 }
 
+/** Reseta o botão de microfone para o estado padrão. */
 function resetMic() {
   micAtivo = false;
-  if (recognition) { try { recognition.stop(); } catch(e){} }
+  if (recognition) {
+    try { recognition.stop(); } catch (e) { /* ignora */ }
+  }
   const btn = document.getElementById('micBtn');
   const ico = document.getElementById('micIco');
   const lbl = document.getElementById('micLbl');
   if (!btn) return;
   btn.classList.remove('listening');
+  btn.disabled    = false;
   ico.textContent = '🎤';
   lbl.textContent = 'Testar minha pronúncia';
-  btn.disabled = false;
 }
 
+/** Inicia (ou cancela) o reconhecimento de voz para a frase atual. */
 function testarPronuncia() {
-  // Para o áudio se estiver tocando
+  // Para o TTS se estiver tocando
   if (synth.speaking) synth.cancel();
-  
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     alert('Seu navegador não suporta reconhecimento de voz. Use o Safari no iPhone.');
     return;
   }
-  
+
+  // Toggle: se mic já está ativo, cancela
   if (micAtivo) { resetMic(); return; }
-  
-  const btn = document.getElementById('micBtn');
-  const ico = document.getElementById('micIco');
-  const lbl = document.getElementById('micLbl');
+
+  const btn      = document.getElementById('micBtn');
+  const ico      = document.getElementById('micIco');
+  const lbl      = document.getElementById('micLbl');
   const resultEl = document.getElementById('pronunciResult');
-  
-  // Esconde resultado anterior
-  resultEl.style.display = 'none';
-  
+
+  resultEl.style.display = 'none'; // oculta resultado anterior
+
   recognition = initRecognition();
-  
+
   recognition.onstart = () => {
-    micAtivo = true;
+    micAtivo        = true;
     btn.classList.add('listening');
     ico.textContent = '⏹';
     lbl.textContent = 'Ouvindo... fale agora!';
-    btn.disabled = false;
+    btn.disabled    = false;
   };
-  
+
   recognition.onresult = (e) => {
-    const heard = e.results[0][0].transcript;
+    const heard  = e.results[0][0].transcript;
     const target = modulos[moduloAtual].frases[atual].en;
     mostrarResultadoPronuncia(heard, target);
   };
-  
-  recognition.onerror = (e) => {
-    resetMic();
-    if (e.error === 'no-speech') {
-      resultEl.className = 'pronunc-result fail';
-      resultEl.style.display = 'block';
-      document.getElementById('prIcon').textContent = '🔇';
-      document.getElementById('prTitle').textContent = 'Não ouvi nada — tente novamente.';
-      document.getElementById('prHeard').textContent = '';
-    } else if (e.error === 'not-allowed') {
-      alert('Permissão de microfone negada. Vá em Ajustes > Safari e permita o microfone.');
-    }
-  };
-  
-  recognition.onend = () => { resetMic(); };
-  
-  try { recognition.start(); }
-  catch(e) { resetMic(); }
-}
-</script>
-</body>
-</html>
+
+  recognition.onerr
