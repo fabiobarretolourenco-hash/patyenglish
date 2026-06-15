@@ -962,7 +962,7 @@
     </div>
   </div>
 
-  <div class="pe-section-label">Lição do dia</div>
+  <div class="pe-section-label" id="sec-licao">Lição do dia</div>
   <div class="pe-lesson-card" onclick="iniciarAula('hotel')">
     <div class="pe-lesson-tag">Módulo 3 · Hotel e Hospedagem</div>
     <div class="pe-lesson-title">Check-in no Hotel</div>
@@ -974,7 +974,7 @@
     <div class="pe-play-btn">▶</div>
   </div>
 
-  <div class="pe-section-label">Seu progresso</div>
+  <div class="pe-section-label" id="sec-progresso">Seu progresso</div>
   <div class="pe-progress-section">
     <div class="pe-progress-header">
       <span class="pe-progress-title">Nível: Iniciante</span>
@@ -990,7 +990,7 @@
   </div>
 
   <div class="pe-divider"></div>
-  <div class="pe-section-label">Módulos de viagem</div>
+  <div class="pe-section-label" id="sec-modulos">Módulos de viagem</div>
   <div class="pe-modules-grid">
     <div class="pe-module-card" onclick="iniciarAula('aeroporto')">
       <span class="pe-module-icon">✈️</span>
@@ -1050,22 +1050,22 @@
   </div>
 
   <div class="pe-nav">
-    <div class="pe-nav-item active">
+    <div class="pe-nav-item active" onclick="navegar('inicio')">
       <span class="pe-nav-icon">🏠</span>
       <span class="pe-nav-label">Início</span>
       <div class="pe-nav-dot"></div>
     </div>
-    <div class="pe-nav-item">
+    <div class="pe-nav-item" onclick="navegar('temas')">
       <span class="pe-nav-icon">📚</span>
       <span class="pe-nav-label">Temas</span>
       <div class="pe-nav-dot"></div>
     </div>
-    <div class="pe-nav-item">
+    <div class="pe-nav-item" onclick="navegar('praticar')">
       <span class="pe-nav-icon">🎭</span>
       <span class="pe-nav-label">Praticar</span>
       <div class="pe-nav-dot"></div>
     </div>
-    <div class="pe-nav-item">
+    <div class="pe-nav-item" onclick="navegar('progresso')">
       <span class="pe-nav-icon">⭐</span>
       <span class="pe-nav-label">Progresso</span>
       <div class="pe-nav-dot"></div>
@@ -1558,6 +1558,30 @@ function iniciarAula(modulo) {
 function voltarDashboard() {
   resetAudio();
   show('screen-dashboard');
+  navegar('inicio');
+}
+
+/**
+ * Gerencia a navegação da bottom nav do dashboard.
+ * Atualiza o tab ativo e faz scroll suave até a seção correspondente.
+ */
+function navegar(aba) {
+  const abas   = ['inicio', 'temas', 'praticar', 'progresso'];
+  const alvos  = {
+    inicio:   document.getElementById('screen-dashboard'),
+    temas:    document.getElementById('sec-modulos'),
+    praticar: document.getElementById('sec-licao'),
+    progresso:document.getElementById('sec-progresso'),
+  };
+
+  // Atualiza classe active nos tabs
+  document.querySelectorAll('.pe-nav-item').forEach((el, i) => {
+    el.classList.toggle('active', abas[i] === aba);
+  });
+
+  // Scroll suave para a seção
+  const alvo = alvos[aba];
+  if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function repetirAula() {
@@ -1842,21 +1866,14 @@ function testarPronuncia() {
       alert('Permissão de microfone negada. Vá em Ajustes > Safari e permita o microfone.');
     }
   };
-
   recognition.onend = () => { resetMic(); };
-
   try {
     recognition.start();
   } catch (e) {
     resetMic();
   }
 }
-
-
-// ═══════════════════════════════════════════════════════════════
 // INICIALIZAÇÃO
-// Exibe o dashboard ao carregar a página.
-// ═══════════════════════════════════════════════════════════════
 show('screen-dashboard');
 </script>
 </body>
