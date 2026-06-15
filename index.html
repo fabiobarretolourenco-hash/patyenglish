@@ -1830,4 +1830,34 @@ function testarPronuncia() {
     mostrarResultadoPronuncia(heard, target);
   };
 
-  recognition.onerr
+  recognition.onerror = (e) => {
+    resetMic();
+    if (e.error === 'no-speech') {
+      resultEl.className     = 'pronunc-result fail';
+      resultEl.style.display = 'block';
+      document.getElementById('prIcon').textContent  = '🔇';
+      document.getElementById('prTitle').textContent = 'Não ouvi nada — tente novamente.';
+      document.getElementById('prHeard').textContent = '';
+    } else if (e.error === 'not-allowed') {
+      alert('Permissão de microfone negada. Vá em Ajustes > Safari e permita o microfone.');
+    }
+  };
+
+  recognition.onend = () => { resetMic(); };
+
+  try {
+    recognition.start();
+  } catch (e) {
+    resetMic();
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// INICIALIZAÇÃO
+// Exibe o dashboard ao carregar a página.
+// ═══════════════════════════════════════════════════════════════
+show('screen-dashboard');
+</script>
+</body>
+</html>
