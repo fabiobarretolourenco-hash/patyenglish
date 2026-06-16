@@ -1477,6 +1477,74 @@ carregarVoz(); // tentativa inicial (vozes podem já estar disponíveis)
 
 
 // ═══════════════════════════════════════════════════════════════
+// ÁUDIO — TTS via Web Speech API
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Reseta toda a UI de áudio + mic de volta ao estado inicial.
+ * Chamado ao navegar entre frases, sair da aula, etc.
+ */
+function resetAudio() {
+  synth.cancel();
+
+  const ico = document.getElementById('audioIco');
+  const lbl = document.getElementById('audioLbl');
+  const btn = document.getElementById('audioBtn');
+  if (ico) ico.textContent = '▶';
+  if (lbl) lbl.textContent = 'Ouvir voz nativa';
+  if (btn) btn.disabled = false;
+
+  // Oculta resultado de pronúncia
+  const pr = document.getElementById('pronunciResult');
+  if (pr) pr.style.display = 'none';
+
+  // Para o reconhecimento de voz se estiver ativo
+  if (micAtivo) {
+    if (recognition) { try { recognition.stop(); } catch(e) {} }
+    micAtivo = false;
+  }
+  const micBtn = document.getElementById('micBtn');
+  const micIco = document.getElementById('micIco');
+  const micLbl = document.getElementById('micLbl');
+  if (micBtn) { micBtn.disabled = false; micBtn.classList.remove('listening'); }
+  if (micIco) micIco.textContent = '🎤';
+  if (micLbl) micLbl.textContent = 'Testar minha pronúncia';
+}
+
+/**
+ * Lê a frase atual em inglês usando a melhor voz disponível.
+ */
+function tocarAudio() {
+  if (synth.speaking) synth.cancel();
+
+  const frase = modulos[moduloAtual].frases[atual].en;
+  const utt   = new SpeechSynthesisUtterance(frase);
+  if (vozSelecionada) utt.voice = vozSelecionada;
+  utt.lang  = 'en-US';
+  utt.rate  = 0.85;
+  utt.pitch = 1.0;
+
+  const ico = document.getElementById('audioIco');
+  const lbl = document.getElementById('audioLbl');
+  const btn = document.getElementById('audioBtn');
+  if (ico) ico.textContent = '⏸';
+  if (lbl) lbl.textContent = 'Ouvindo...';
+  if (btn) btn.disabled   = true;
+
+  const resetUI = () => {
+    if (ico) ico.textContent = '▶';
+    if (lbl) lbl.textContent = 'Ouvir voz nativa';
+    if (btn) btn.disabled   = false;
+  };
+
+  utt.onend   = resetUI;
+  utt.onerror = resetUI;
+
+  synth.speak(utt);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // DADOS DOS MÓDULOS
 //
 // Cada módulo tem: tag (label do módulo), title (título da aula),
@@ -2200,7 +2268,7 @@ function processarResposta(heard) {
   const chat = document.getElementById('rpChat');
   const ub = document.createElement('div');
   ub.className = 'rp-bubble user';
-  ub.textContent = '“' + heard + '”';
+  ub.textContent = '"' + heard + '"';
   chat.appendChild(ub);
   setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
 
@@ -2262,3 +2330,4 @@ show('screen-dashboard');
 </script>
 </body>
 </html>
+ml>
